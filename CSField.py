@@ -16,7 +16,7 @@ import math
 # ======================================================
 # CONSTANTS
 # ======================================================
-MU0 = 1.26E-6            # 真空中の透磁率
+MU0 = 4*np.pi*1E-7       # 真空中の透磁率 [H m-1]
 AMU2KG = 1.66E-27        # [kg]
 RJ = 71492.0E+3          # JUPITER RADIUS [m]
 
@@ -121,19 +121,19 @@ class CSField():
         return B_sys3[0], B_sys3[1], B_sys3[2]
 
     def _B_vector_cylindrical(
-        self,
-        x,
-        y,
-        z
+            self,
+            x,
+            y,
+            z
     ):
         """
         Args:
-            x (float): S3 right hand in [RJ]
-            y (float): S3 right hand in [RJ]
-            z (float): S3 right hand in [RJ]
+            x (float): SIII right hand [RJ]
+            y (float): SIII right hand [RJ]
+            z (float): SIII right hand [RJ]
 
         Returns:
-            tuple: B1 vector (B_rho, B_phi, B_Z) in [T]
+            tuple: B1 vector (B_rho, B_phi, B_Z) [T]
         """
         I_rho = self.I_rho  # Radial current density [A]
         I_phi = self.I_phi  # Azimuthal current density [A]
@@ -166,16 +166,16 @@ class CSField():
             B_rho = (MU0*I_phi)/(4*rho_cs*D)*((f1+f2)-(f3+f4))
 
             g1 = 2/math.sqrt(rho_cs**2+c**2)
-            g2 = -1/math.sqrt(rho_cs**2+(u_c1)**2)
-            g3 = -1/math.sqrt(rho_cs**2+(u_c2)**2)
+            g2 = -1/math.sqrt(rho_cs**2+u_c1**2)
+            g3 = -1/math.sqrt(rho_cs**2+u_c2**2)
 
             g4 = 2/math.sqrt(rho_cs**2+d**2)
-            g5 = -1/math.sqrt(rho_cs**2+(u_d1)**2)
-            g6 = -1/math.sqrt(rho_cs**2+(u_d2)**2)
+            g5 = -1/math.sqrt(rho_cs**2+u_d1**2)
+            g6 = -1/math.sqrt(rho_cs**2+u_d2**2)
 
             B_Z = (MU0*I_phi/(4*D))*((g1+g2+g3)-(g4+g5+g6))  # [T]
 
-            B_phi = 0.0  # -((MU0*I_rho)/(2*np.pi*rho_cs))*(z_cs/D)  # [T]
+            B_phi = -((MU0*I_rho)/(2*np.pi*rho_cs*RJ))*(z_cs/D)  # [T]
 
         elif abs(z_cs) > D:
             # print('abs(z_cs) > D')
@@ -184,23 +184,23 @@ class CSField():
             v_d1 = d+abs(z_cs)+D
             v_d2 = d+abs(z_cs)-D
 
-            f1 = (v_c1)/math.sqrt(rho_cs**2+(v_c1)**2)
-            f2 = -(v_c2)/math.sqrt(rho_cs**2+(v_c2)**2)
+            f1 = (v_c1)/math.sqrt(rho_cs**2+v_c1**2)
+            f2 = -(v_c2)/math.sqrt(rho_cs**2+v_c2**2)
 
-            f3 = (v_d1)/math.sqrt(rho_cs**2+(v_d1)**2)
-            f4 = -(v_d2)/math.sqrt(rho_cs**2+(v_d2)**2)
+            f3 = (v_d1)/math.sqrt(rho_cs**2+v_d1**2)
+            f4 = -(v_d2)/math.sqrt(rho_cs**2+v_d2**2)
 
             B_rho = sgn*(MU0*I_phi/(4*rho_cs*D))*((f1+f2)-(f3+f4))  # [T]
 
-            g1 = 1/math.sqrt(rho_cs**2+(v_c2)**2)
-            g2 = -1/math.sqrt(rho_cs**2+(v_c1)**2)
+            g1 = 1/math.sqrt(rho_cs**2+v_c2**2)
+            g2 = -1/math.sqrt(rho_cs**2+v_c1**2)
 
-            g3 = 1/math.sqrt(rho_cs**2+(v_d2)**2)
-            g4 = -1/math.sqrt(rho_cs**2+(v_d1)**2)
+            g3 = 1/math.sqrt(rho_cs**2+v_d2**2)
+            g4 = -1/math.sqrt(rho_cs**2+v_d1**2)
 
             B_Z = (MU0*I_phi/(4*D))*((g1+g2)-(g3+g4))  # [T]
 
-            B_phi = 0.0  # -sgn*((MU0*I_rho)/(2*np.pi*rho_cs))  # [T]
+            B_phi = -sgn*((MU0*I_rho)/(2*np.pi*rho_cs*RJ))  # [T]
 
         # B_norm = math.sqrt(B_rho**2+B_phi**2+B_Z**2)
         # print('B_norm [nT]:', B_norm*1E+9)
@@ -219,14 +219,14 @@ class CSField():
         return B_x, B_y, B_z
 
     def _convert_coordinates(
-        self,
-        B_x,
-        B_y,
-        B_z,
-        x,
-        y,
-        z,
-        output_coords,
+            self,
+            B_x,
+            B_y,
+            B_z,
+            x,
+            y,
+            z,
+            output_coords,
     ):
         if output_coords == 'cartesian':
             return B_x, B_y, B_z
@@ -289,6 +289,15 @@ class CSField():
             z,
             output_coords='cartesian'
     ):
+        """
+        Args:
+            x (float): SIII right hand [RJ]
+            y (float): SIII right hand [RJ]
+            z (float): SIII right hand [RJ]
+            output_coords (str): 'cartesian', 'cylindrical', or 'spherical'
+
+        return: [A m-1]
+        """
         B_x, B_y, B_z = self._B_vector_cylindrical(x, y, z)
 
         return self._convert_coordinates(
@@ -302,26 +311,29 @@ class CSField():
         MLT,
         rho_cs
     ):
+        """
+        Args:
+            MLT (float): [hr]
+            rho_cs (float): [RJ]
+
+        return: [A m-1]
+        """
         f1 = self.I_phi*(rho_cs)/(((rho_cs)**2+(self.c)**2)**(1.5))
         f2 = self.I_phi*(rho_cs)/(((rho_cs)**2+(self.d)**2)**(1.5))
 
-        I = (f1-f2)         # [A m-1]
-        return I
+        return f1-f2
 
-    def J_phi_Wang22(
-        self,
-        R,
-        z,
-        MLT
-    ):
+    def J_phi_Wang22(self, rho_cs, z, MLT):
         """
         Args:
-            R (float): [RJ]
+            rho_cs (float): [RJ]
             z (float): [RJ]
             MLT (float): [hr]
 
         return: [MA RJ-2]
         """
+        R = rho_cs
+
         def A0(x):
             K0 = 1.17E+0
             K1 = 7.00E-2
@@ -373,15 +385,17 @@ class CSField():
 
         return A0(MLT)*np.exp(-0.5*((np.log10(R)-A1(MLT))/(A2(MLT)))**2)*np.exp(-0.5*(z/B1(R))**2)
 
-    def I_phi_Wang22(self, R, MLT):
+    def I_phi_Wang22(self, rho_cs, MLT):
         """
         Args:
-            R (float): [RJ]
-            z (float): [RJ]
+            rho_cs (float): cylindrical [RJ]
+            z (float): cylindrical [RJ]
             MLT (float): [hr]
 
         return: [MA RJ-2]
         """
+        R = rho_cs
+
         def A0(x):
             K0 = 1.17E+0
             K1 = 7.00E-2
@@ -433,8 +447,13 @@ class CSField():
 
         return A0(MLT)*np.exp(-0.5*((np.log10(R)-A1(MLT))/(A2(MLT)))**2)*math.sqrt(2*np.pi)*B1(R)
 
-    def I_phi_Con20(self, R):
-        I_0 = (139.6*1E-9)*(2/MU0)     # [A m-1]
-        # print('I_0 [MA RJ-1]:', I_0*1E-6*RJ)
-        I_phi = I_0/R                  # [A m-1]
-        return I_phi
+    def I_phi_Con20(self, rho_cs):
+        """
+        Args:
+            rho_cs (float): cylindrical [RJ]
+
+        return: [A m-1]
+        """
+        D_con2020 = 3.6     # [RJ]
+        I_0 = (139.6*1E-9)*(4*D_con2020/MU0)     # [A m-1]
+        return I_0/rho_cs

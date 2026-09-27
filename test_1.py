@@ -29,7 +29,7 @@ jm.Con2020.Config(equation_type='integral')
 # ===========================================================
 # CONSTANTS
 # ===========================================================
-MU0 = 1.26E-6            # 真空中の透磁率
+MU0 = 4*np.pi*1E-7       # 真空中の透磁率 [H m-1]
 AMU2KG = 1.66E-27        # [kg]
 RJ = 71492.0E+3          # JUPITER RADIUS [m]
 
@@ -37,8 +37,8 @@ csfield = CSField()
 csfield.config(
     I_rho=16.7,
     I_phi=1.0E-4,
-    D=2.4,
-    c=13.9*math.sqrt(2),    # 15.0 / 13.9
+    D=2.5,                  # 3.6 / 2.5
+    c=13.6*math.sqrt(2),    # 15.0 / 13.9
     d=25.0*math.sqrt(2),    # 24.8 / 25.0
 )
 
@@ -65,9 +65,9 @@ for i in range(rho_cs.size):
     I_phi_w22_12h[i] = csfield.I_phi_Wang22(rho_cs[i]/RJ, MLT=12.0)
 
 # Con2020
-rho_cs_con20 = np.linspace(7.8, 51.4, 100)*RJ          # [m]
-I_phi_con20 = csfield.I_phi_Con20(rho_cs_con20/RJ)     # [A m-1]
-J_phi_con20 = (I_phi_con20/(2*3.6*RJ))*(1E-6)*(RJ**2)  # [MA RJ-2]
+rho_cs_con20 = np.linspace(7.8, 51.4, 100)*RJ         # [m]
+I_phi_con20 = csfield.I_phi_Con20(rho_cs_con20/RJ)    # [A m-1]
+J_phi_con20 = (I_phi_con20/(2*3.6*RJ))*(1E-6)*RJ*RJ   # [MA RJ-2]
 
 
 # ===========================================================
@@ -143,10 +143,10 @@ F.set_xaxis(label=r'$\rho$ [$R_{\rm J}$]',
             minor_num=5)
 F.set_yaxis(ax_idx=0,
             label=r'$I_{\varphi}(R)$ [MA $R_{\rm J}^{-1}$]',
-            min=0, max=10.0,
-            ticks=np.linspace(0, 10, 6),
-            ticklabels=np.linspace(0, 10.0, 6),
-            minor_num=5,)
+            min=0, max=18.0,
+            ticks=np.linspace(0, 18, 10),
+            ticklabels=np.linspace(0, 18, 10, dtype=int),
+            minor_num=2,)
 
 F.ax.plot(rho_cs/RJ, I_phi_new*(1E-6)*RJ,
           color=UC.red,
@@ -214,9 +214,11 @@ for i in range(x0.size):
                                                     y0[i]/RJ,
                                                     z0[i]/RJ,)
 Brho1 = Bx1*np.cos(phi0) + By1*np.sin(phi0)
+Bphi1 = -Bx1*np.sin(phi0) + By1*np.cos(phi0)
 
 Bx1_c, By1_c, Bz1_c = jm.Con2020.Field(x0/RJ, y0/RJ, z0/RJ)  # [nT]
 Brho1_c = Bx1_c*np.cos(phi0) + By1_c*np.sin(phi0)
+Bphi1_c = -Bx1_c*np.sin(phi0) + By1_c*np.cos(phi0)
 
 
 # ===========================================================
@@ -257,6 +259,12 @@ F.ax.plot(r0_arr/RJ,
           linewidth=1.75,
           label=r'New model $B_\rho$')
 F.ax.plot(r0_arr/RJ,
+          Bphi1*1E+9,
+          color=UC.red,
+          linestyle='-.',
+          linewidth=1.75,
+          label=r'New model $B_\varphi$')
+F.ax.plot(r0_arr/RJ,
           np.sqrt(Bx1_c**2+By1_c**2+Bz1_c**2),
           color='k',
           label=r'Con2020 $|B|$')
@@ -265,13 +273,18 @@ F.ax.plot(r0_arr/RJ,
           color='k',
           linestyle='--',
           label=r'Con2020 $B_\rho$')
+F.ax.plot(r0_arr/RJ,
+          Bphi1_c,
+          color='k',
+          linestyle='-.',
+          label=r'Con2020 $B_\varphi$')
 
 F.ax.set_title(r'Magnetic field intensity', weight='bold')
 
 legend = F.legend(ax_idx=0,
                   ncol=1, markerscale=1.0,
                   loc='upper right',
-                  handlelength=1.6,
+                  handlelength=1.8,
                   textcolor=False,
                   fontsize_scale=0.65,
                   handletextpad=0.4)

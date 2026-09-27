@@ -121,19 +121,19 @@ class CSField():
         return B_sys3[0], B_sys3[1], B_sys3[2]
 
     def _B_vector_cylindrical(
-        self,
-        x,
-        y,
-        z
+            self,
+            x,
+            y,
+            z
     ):
         """
         Args:
-            x (float): S3 right hand in [RJ]
-            y (float): S3 right hand in [RJ]
-            z (float): S3 right hand in [RJ]
+            x (float): SIII right hand [RJ]
+            y (float): SIII right hand [RJ]
+            z (float): SIII right hand [RJ]
 
         Returns:
-            tuple: B1 vector (B_rho, B_phi, B_Z) in [T]
+            tuple: B1 vector (B_rho, B_phi, B_Z) [T]
         """
         I_rho = self.I_rho  # Radial current density [A]
         I_phi = self.I_phi  # Azimuthal current density [A]
@@ -219,14 +219,14 @@ class CSField():
         return B_x, B_y, B_z
 
     def _convert_coordinates(
-        self,
-        B_x,
-        B_y,
-        B_z,
-        x,
-        y,
-        z,
-        output_coords,
+            self,
+            B_x,
+            B_y,
+            B_z,
+            x,
+            y,
+            z,
+            output_coords,
     ):
         if output_coords == 'cartesian':
             return B_x, B_y, B_z
@@ -289,6 +289,15 @@ class CSField():
             z,
             output_coords='cartesian'
     ):
+        """
+        Args:
+            x (float): SIII right hand [RJ]
+            y (float): SIII right hand [RJ]
+            z (float): SIII right hand [RJ]
+            output_coords (str): 'cartesian', 'cylindrical', or 'spherical'
+
+        return: [A m-1]
+        """
         B_x, B_y, B_z = self._B_vector_cylindrical(x, y, z)
 
         return self._convert_coordinates(
@@ -302,26 +311,29 @@ class CSField():
         MLT,
         rho_cs
     ):
+        """
+        Args:
+            MLT (float): [hr]
+            rho_cs (float): [RJ]
+
+        return: [A m-1]
+        """
         f1 = self.I_phi*(rho_cs)/(((rho_cs)**2+(self.c)**2)**(1.5))
         f2 = self.I_phi*(rho_cs)/(((rho_cs)**2+(self.d)**2)**(1.5))
 
-        I = (f1-f2)         # [A m-1]
-        return I
+        return f1-f2
 
-    def J_phi_Wang22(
-        self,
-        R,
-        z,
-        MLT
-    ):
+    def J_phi_Wang22(self, rho_cs, z, MLT):
         """
         Args:
-            R (float): [RJ]
+            rho_cs (float): [RJ]
             z (float): [RJ]
             MLT (float): [hr]
 
         return: [MA RJ-2]
         """
+        R = rho_cs
+
         def A0(x):
             K0 = 1.17E+0
             K1 = 7.00E-2
@@ -373,15 +385,17 @@ class CSField():
 
         return A0(MLT)*np.exp(-0.5*((np.log10(R)-A1(MLT))/(A2(MLT)))**2)*np.exp(-0.5*(z/B1(R))**2)
 
-    def I_phi_Wang22(self, R, MLT):
+    def I_phi_Wang22(self, rho_cs, MLT):
         """
         Args:
-            R (float): [RJ]
-            z (float): [RJ]
+            rho_cs (float): cylindrical [RJ]
+            z (float): cylindrical [RJ]
             MLT (float): [hr]
 
         return: [MA RJ-2]
         """
+        R = rho_cs
+
         def A0(x):
             K0 = 1.17E+0
             K1 = 7.00E-2
@@ -433,8 +447,12 @@ class CSField():
 
         return A0(MLT)*np.exp(-0.5*((np.log10(R)-A1(MLT))/(A2(MLT)))**2)*math.sqrt(2*np.pi)*B1(R)
 
-    def I_phi_Con20(self, R):
-        I_0 = (139.6*1E-9)*(2/MU0)     # [A m-1]
-        # print('I_0 [MA RJ-1]:', I_0*1E-6*RJ)
-        I_phi = I_0/R                  # [A m-1]
-        return I_phi
+    def I_phi_Con20(self, rho_cs):
+        """
+        Args:
+            rho_cs (float): cylindrical [RJ]
+
+        return: [A m-1]
+        """
+        I_0 = (139.6*1E-9)*(4*3.6/MU0)     # [A m-1]
+        return I_0/rho_cs
