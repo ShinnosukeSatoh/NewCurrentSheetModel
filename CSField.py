@@ -31,12 +31,16 @@ class CSField():
     def config(
             self,
             I_rho=16.7,
-            I_phi=1.0E-4,
+            I_phi=3.8E-4,
             D=3.6,
-            c=15.0,
-            d=25.0,
             theta_d_deg=9.3,
             phi_d_deg=155.8,
+            c1=12.6,
+            c2=22.0,
+            c3=25.5,
+            w1=-0.13,
+            w2=2.19,
+            w3=-2.09
     ):
         """
         Args:
@@ -45,18 +49,28 @@ class CSField():
             D (float): Half thickness of the current sheet [RJ]
             c (float): c < d [RJ]
             d (float): c < d [RJ]
-            theta_d_deg (float): tilt angle of current sheet normal [deg]
-            phi_d_deg (float): azimuthal angle of the tilt of
+            theta_d_deg (float): Tilt angle of current sheet normal [deg]
+            phi_d_deg (float): Azimuthal angle of the tilt of
                                 the current sheet normal sheet tilt
                                 (right-hand) [deg]
+            c1 (float): c1 < c2 < c3 [RJ]
+            c2 (float): c1 < c2 < c3 [RJ]
+            c3 (float): c1 < c2 < c3 [RJ]
+            w1 (float): Weight of the Hankel kernel
+            w2 (float): Weight of the Hankel kernel
+            w3 (float): Weight of the Hankel kernel
         """
         self.I_rho = I_rho*1E+6           # Radial current inteisity [A]
         self.I_phi = I_phi*(1E+6)         # Azimuthal current density [A m-1]
         self.D = D                        # Current sheet half thickness [RJ]
-        self.c = c                        # c < d [RJ]
-        self.d = d                        # c < d [RJ]
         self.theta_d_deg = theta_d_deg    # [deg]
         self.phi_d_deg = phi_d_deg        # [deg]
+        self.c1 = c1                      # c1 < c2 < c3 [RJ]
+        self.c2 = c2                      # c1 < c2 < c3 [RJ]
+        self.c3 = c3                      # c1 < c2 < c3 [RJ]
+        self.w1 = w1                      # Weight of the Hankel kernel
+        self.w2 = w2                      # Weight of the Hankel kernel
+        self.w3 = w3                      # Weight of the Hankel kernel
 
     def _sys3_2_cs(
             self,
@@ -137,8 +151,12 @@ class CSField():
         """
         I_rho = self.I_rho  # Radial current density [A]
         I_phi = self.I_phi  # Azimuthal current density [A]
-        c = self.c          # [RJ]
-        d = self.d          # [RJ]
+        c1 = self.c1        # [RJ]
+        c2 = self.c2        # [RJ]
+        c3 = self.c3        # [RJ]
+        w1 = self.w1        # [RJ]
+        w2 = self.w2        # [RJ]
+        w3 = self.w3        # [RJ]
         D = self.D          # Half thickness of the current sheet [RJ]
 
         x_cs, y_cs, z_cs, rho_cs, phi_cs = self._sys3_2_cs(
@@ -153,52 +171,66 @@ class CSField():
         # print('sgn:', sgn)
         if abs(z_cs) <= D:
             # print('abs(z_cs) <= D')
-            u_c1 = c+z_cs+D
-            u_c2 = c-z_cs+D
-            u_d1 = d+z_cs+D
-            u_d2 = d-z_cs+D
+            u_c11 = c1+z_cs+D
+            u_c12 = c1-z_cs+D
+            u_c21 = c2+z_cs+D
+            u_c22 = c2-z_cs+D
+            u_c31 = c3+z_cs+D
+            u_c32 = c3-z_cs+D
 
-            f1 = u_c1/math.sqrt(rho_cs**2+u_c1**2)
-            f2 = -u_c2/math.sqrt(rho_cs**2+u_c2**2)
-            f3 = u_d1/math.sqrt(rho_cs**2+u_d1**2)
-            f4 = -u_d2/math.sqrt(rho_cs**2+u_d2**2)
+            f11 = u_c11/math.sqrt(rho_cs**2+u_c11**2)
+            f12 = -u_c12/math.sqrt(rho_cs**2+u_c12**2)
+            f21 = u_c21/math.sqrt(rho_cs**2+u_c21**2)
+            f22 = -u_c22/math.sqrt(rho_cs**2+u_c22**2)
+            f31 = u_c31/math.sqrt(rho_cs**2+u_c31**2)
+            f32 = -u_c32/math.sqrt(rho_cs**2+u_c32**2)
 
-            B_rho = (MU0*I_phi)/(4*rho_cs*D)*((f1+f2)-(f3+f4))
+            B_rho = w1*(f11+f12)+w2*(f21+f22)+w3*(f31+f32)
+            B_rho *= MU0*I_phi/(4*rho_cs*D)       # [T]
 
-            g1 = 2/math.sqrt(rho_cs**2+c**2)
-            g2 = -1/math.sqrt(rho_cs**2+u_c1**2)
-            g3 = -1/math.sqrt(rho_cs**2+u_c2**2)
+            g11 = 2/math.sqrt(rho_cs**2+c1**2)
+            g12 = -1/math.sqrt(rho_cs**2+u_c11**2)
+            g13 = -1/math.sqrt(rho_cs**2+u_c12**2)
+            g21 = 2/math.sqrt(rho_cs**2+c2**2)
+            g22 = -1/math.sqrt(rho_cs**2+u_c21**2)
+            g23 = -1/math.sqrt(rho_cs**2+u_c22**2)
+            g31 = 2/math.sqrt(rho_cs**2+c3**2)
+            g32 = -1/math.sqrt(rho_cs**2+u_c31**2)
+            g33 = -1/math.sqrt(rho_cs**2+u_c32**2)
 
-            g4 = 2/math.sqrt(rho_cs**2+d**2)
-            g5 = -1/math.sqrt(rho_cs**2+u_d1**2)
-            g6 = -1/math.sqrt(rho_cs**2+u_d2**2)
-
-            B_Z = (MU0*I_phi/(4*D))*((g1+g2+g3)-(g4+g5+g6))  # [T]
+            B_Z = w1*(g11+g12+g13)+w2*(g21+g22+g23)+w3*(g31+g32+g33)
+            B_Z *= MU0*I_phi/(4*D)                # [T]
 
             B_phi = -((MU0*I_rho)/(2*np.pi*rho_cs*RJ))*(z_cs/D)  # [T]
 
         elif abs(z_cs) > D:
             # print('abs(z_cs) > D')
-            v_c1 = c+abs(z_cs)+D
-            v_c2 = c+abs(z_cs)-D
-            v_d1 = d+abs(z_cs)+D
-            v_d2 = d+abs(z_cs)-D
+            v_c11 = c1+abs(z_cs)+D
+            v_c12 = c1+abs(z_cs)-D
+            v_c21 = c2+abs(z_cs)+D
+            v_c22 = c2+abs(z_cs)-D
+            v_c31 = c3+abs(z_cs)+D
+            v_c32 = c3+abs(z_cs)-D
 
-            f1 = (v_c1)/math.sqrt(rho_cs**2+v_c1**2)
-            f2 = -(v_c2)/math.sqrt(rho_cs**2+v_c2**2)
+            f11 = v_c11/math.sqrt(rho_cs**2+v_c11**2)
+            f12 = -v_c12/math.sqrt(rho_cs**2+v_c12**2)
+            f21 = v_c21/math.sqrt(rho_cs**2+v_c21**2)
+            f22 = -v_c22/math.sqrt(rho_cs**2+v_c22**2)
+            f31 = v_c31/math.sqrt(rho_cs**2+v_c31**2)
+            f32 = -v_c32/math.sqrt(rho_cs**2+v_c32**2)
 
-            f3 = (v_d1)/math.sqrt(rho_cs**2+v_d1**2)
-            f4 = -(v_d2)/math.sqrt(rho_cs**2+v_d2**2)
+            B_rho = w1*(f11+f12)+w2*(f21+f22)+w3*(f31+f32)
+            B_rho *= sgn*(MU0*I_phi/(4*rho_cs*D))  # [T]
 
-            B_rho = sgn*(MU0*I_phi/(4*rho_cs*D))*((f1+f2)-(f3+f4))  # [T]
+            g11 = 1/math.sqrt(rho_cs**2+v_c12**2)
+            g12 = -1/math.sqrt(rho_cs**2+v_c11**2)
+            g21 = 1/math.sqrt(rho_cs**2+v_c22**2)
+            g22 = -1/math.sqrt(rho_cs**2+v_c21**2)
+            g31 = 1/math.sqrt(rho_cs**2+v_c32**2)
+            g32 = -1/math.sqrt(rho_cs**2+v_c31**2)
 
-            g1 = 1/math.sqrt(rho_cs**2+v_c2**2)
-            g2 = -1/math.sqrt(rho_cs**2+v_c1**2)
-
-            g3 = 1/math.sqrt(rho_cs**2+v_d2**2)
-            g4 = -1/math.sqrt(rho_cs**2+v_d1**2)
-
-            B_Z = (MU0*I_phi/(4*D))*((g1+g2)-(g3+g4))  # [T]
+            B_Z = w1*(g11+g12)+w2*(g21+g22)+w3*(g31+g32)
+            B_Z *= MU0*I_phi/(4*D)  # [T]
 
             B_phi = -sgn*((MU0*I_rho)/(2*np.pi*rho_cs*RJ))  # [T]
 
@@ -306,7 +338,7 @@ class CSField():
             output_coords
         )
 
-    def I_phi_profile(
+    def I_phi_profil_2(
         self,
         MLT,
         rho_cs
@@ -322,6 +354,23 @@ class CSField():
         f2 = self.I_phi*(rho_cs)/(((rho_cs)**2+(self.d)**2)**(1.5))
 
         return f1-f2
+
+    def I_phi_profile(
+        self,
+        MLT,
+        rho_cs
+    ):
+        """
+        Args:
+            MLT (float): [hr]
+            rho_cs (float): [RJ]
+
+        return: [A m-1]
+        """
+        f1 = self.I_phi*(rho_cs)/(((rho_cs)**2+(self.c1)**2)**(1.5))
+        f2 = self.I_phi*(rho_cs)/(((rho_cs)**2+(self.c2)**2)**(1.5))
+        f3 = self.I_phi*(rho_cs)/(((rho_cs)**2+(self.c3)**2)**(1.5))
+        return self.w1*f1+self.w2*f2+self.w3*f3
 
     def J_phi_Wang22(self, rho_cs, z, MLT):
         """

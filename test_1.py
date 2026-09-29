@@ -41,16 +41,21 @@ csfield = CSField()
 csfield.config(
     I_rho=16.7,
     I_phi=4.35E-4,
-    D=3.6,                  # 3.6 / 2.5
-    c=22.0,    # 15.0*math.sqrt(2) / 13.9*math.sqrt(2)
-    d=26.0,    # 24.8*math.sqrt(2) / 25.0*math.sqrt(2)
+    D=3.6,          # 3.6 / 2.5
+    c1=12.6,
+    c2=22.0,
+    c3=25.5,
+    w1=-0.13,
+    w2=2.19,
+    w3=-2.09
 )
 
 
 # ===========================================================
 # CURRENT DENSITY
 # ===========================================================
-rho_cs = np.linspace(5.0, 65.0, 200)*RJ     # [m]
+# FASTER
+rho_cs = np.linspace(0.0, 100.0, 300)*RJ     # [m]
 I_phi_new = csfield.I_phi_profile(
     MLT=0.0,
     rho_cs=rho_cs/RJ
@@ -58,19 +63,20 @@ I_phi_new = csfield.I_phi_profile(
 J_phi_new = (I_phi_new/(2*csfield.D*RJ))*(1E-6)*(RJ**2)  # [MA RJ-2]
 # print('I_phi_new [MA RJ-1]:', I_phi_new*1E-6*RJ)
 print('I_phi_0 [MA RJ-1]:', csfield.I_phi*1E-6*RJ)
+print('np.min(J_phi_new):', np.min(J_phi_new))
 
 # Wang+2022
 J_phi_w22_6h = np.zeros(rho_cs.size)   # [MA RJ-2]
 J_phi_w22_12h = np.zeros(rho_cs.size)  # [MA RJ-2]
 J_phi_w22_18h = np.zeros(rho_cs.size)  # [MA RJ-2]
 I_phi_w22_6h = np.zeros(rho_cs.size)   # [MA RJ-1]
-I_phi_w22_12h = np.zeros(rho_cs.size)  # [MA RJ-1]
+I_phi_w22_18h = np.zeros(rho_cs.size)  # [MA RJ-1]
 for i in range(rho_cs.size):
     J_phi_w22_6h[i] = csfield.J_phi_Wang22(rho_cs[i]/RJ, z=0, MLT=6.0)
     J_phi_w22_12h[i] = csfield.J_phi_Wang22(rho_cs[i]/RJ, z=0, MLT=12.0)
     J_phi_w22_18h[i] = csfield.J_phi_Wang22(rho_cs[i]/RJ, z=0, MLT=18.0)
     I_phi_w22_6h[i] = csfield.I_phi_Wang22(rho_cs[i]/RJ, MLT=6.0)
-    I_phi_w22_12h[i] = csfield.I_phi_Wang22(rho_cs[i]/RJ, MLT=12.0)
+    I_phi_w22_18h[i] = csfield.I_phi_Wang22(rho_cs[i]/RJ, MLT=18.0)
 
 # Con2020
 rho_cs_con20 = np.linspace(7.8, 51.4, 100)*RJ         # [m]
@@ -89,23 +95,23 @@ F.set_figparams(nrows=1, figsize=(5.5, 4.7), dpi='XL')
 F.hspace = 0.15
 F.initialize()
 
-xticks = np.arange(5, 65+1, 5)
-xticklabels = np.arange(5, 65+1, 5, dtype=int)
+xticks = np.arange(0, 65+1, 5)
+xticklabels = np.arange(0, 65+1, 5, dtype=int)
 
 F.set_xaxis(label=r'$\rho$ [$R_{\rm J}$]',
-            min=5.0, max=35.0,
+            min=0.0, max=35.0,
             ticks=xticks,
             ticklabels=xticklabels,
             minor_num=5)
 F.set_yaxis(ax_idx=0,
             label=r'$J_{\varphi}(R)$ [MA $R_{\rm J}^{-2}$]',
-            min=0, max=2.5,
+            min=0.0, max=2.5,
             ticks=np.linspace(0, 2.5, 6),
             ticklabels=np.linspace(0, 2.5, 6),
             minor_num=5,)
 
 F.ax.plot(rho_cs/RJ, J_phi_new,
-          color=UC.red,
+          color=UC.red, linewidth=3.0,
           label='New model')
 F.ax.plot(rho_cs_con20/RJ, J_phi_con20,
           color='k',
@@ -115,6 +121,12 @@ F.ax.plot(rho_cs/RJ, J_phi_w22_6h,
           label='Wang+2022')
 F.ax.plot(rho_cs/RJ, J_phi_w22_18h,
           color=UC.blue,)
+F.ax.fill_between(x=rho_cs/RJ,
+                  y1=J_phi_w22_6h,
+                  y2=J_phi_w22_18h,
+                  ec=None,
+                  fc=UC.lighterblue,
+                  alpha=0.4, zorder=0.9,)
 
 F.ax.set_title(r'Current density', weight='bold')
 
@@ -141,23 +153,23 @@ F.set_figparams(nrows=1, figsize=(5.5, 4.7), dpi='XL')
 F.hspace = 0.15
 F.initialize()
 
-xticks = np.arange(5, 65+1, 5)
-xticklabels = np.arange(5, 65+1, 5, dtype=int)
+xticks = np.arange(0, 65+1, 5)
+xticklabels = np.arange(0, 65+1, 5, dtype=int)
 
 F.set_xaxis(label=r'$\rho$ [$R_{\rm J}$]',
-            min=5.0, max=35.0,
+            min=0.0, max=35.0,
             ticks=xticks,
             ticklabels=xticklabels,
             minor_num=5)
 F.set_yaxis(ax_idx=0,
             label=r'$I_{\varphi}(R)$ [MA $R_{\rm J}^{-1}$]',
-            min=0, max=18.0,
+            min=-0.2, max=18.0,
             ticks=np.linspace(0, 18, 10),
             ticklabels=np.linspace(0, 18, 10, dtype=int),
             minor_num=2,)
 
 F.ax.plot(rho_cs/RJ, I_phi_new*(1E-6)*RJ,
-          color=UC.red,
+          color=UC.red, linewidth=3.0,
           label='New model')
 F.ax.plot(rho_cs_con20/RJ, I_phi_con20*(1E-6)*RJ,
           color='k',
@@ -165,8 +177,14 @@ F.ax.plot(rho_cs_con20/RJ, I_phi_con20*(1E-6)*RJ,
 F.ax.plot(rho_cs/RJ, I_phi_w22_6h,
           color=UC.blue,
           label='Wang+2022')
-F.ax.plot(rho_cs/RJ, I_phi_w22_12h,
+F.ax.plot(rho_cs/RJ, I_phi_w22_18h,
           color=UC.blue)
+F.ax.fill_between(x=rho_cs/RJ,
+                  y1=I_phi_w22_6h,
+                  y2=I_phi_w22_18h,
+                  ec=None,
+                  fc=UC.lighterblue,
+                  alpha=0.4, zorder=0.9,)
 
 F.ax.set_title(r'Current density', weight='bold')
 
@@ -205,7 +223,7 @@ print('B_norm (Con2020) [nT]:', math.sqrt(Bx1_c**2+By1_c**2+Bz1_c**2))
 # ===========================================================
 # B1を計算してみる (動径方向に)
 # ===========================================================
-r0_arr = np.linspace(3, 40, 20)*RJ  # Radial discenta [m]
+r0_arr = np.linspace(2, 40, 20)*RJ  # Radial discenta [m]
 theta0 = np.radians(89.5)       # Colatitude [rad]
 phi0 = np.radians(360.0-112.0)   # East longitude [rad]
 
@@ -230,7 +248,7 @@ Bphi1_c = -Bx1_c*np.sin(phi0) + By1_c*np.cos(phi0)
 
 
 # ===========================================================
-# |B_1|の動径分布を描いてみる
+# |B1|の動径分布を描いてみる
 # ===========================================================
 F = ShareXaxis()
 F.fontsize = 21
@@ -244,7 +262,7 @@ xticks = np.arange(5, 45+1, 5)
 xticklabels = np.arange(5, 45+1, 5, dtype=int)
 
 F.set_xaxis(label=r'$\rho$ [$R_{\rm J}$]',
-            min=3.0, max=35.0,
+            min=2.0, max=35.0,
             ticks=xticks,
             ticklabels=xticklabels,
             minor_num=5)
@@ -299,27 +317,3 @@ legend = F.legend(ax_idx=0,
 legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
 
 plt.savefig('B1_norm.png', bbox_inches='tight')
-
-
-# ===========================================================
-# パラメータcとdのチョイスを考える
-# ===========================================================
-rho_p = 15.0
-c = np.arange(5, 25+1, 1)
-d = np.arange(5, 35+1, 1)
-c, d = np.meshgrid(c, d)[0], np.meshgrid(c, d)[1]
-f_i = (c**2-2*rho_p**2)/((rho_p**2+c**2)**(5/2)) - \
-    (d**2-2*rho_p**2)/((rho_p**2+d**2)**(5/2))
-
-fig, ax = plt.subplots()
-ax.set_xlabel(r'c [$R_{\rm J}$]')
-ax.set_ylabel(r'd [$R_{\rm J}$]')
-ax.set_xticks(np.arange(5, np.max(c)+1, 5))
-ax.set_yticks(np.arange(5, np.max(d)+1, 5))
-pc = ax.pcolormesh(
-    c[0, :], d[:, 0], np.where(c < d, f_i, np.nan)
-)
-fig.colorbar(pc, ax=ax)
-fig.tight_layout()
-plt.savefig('c_d_parameter.png')
-plt.close()

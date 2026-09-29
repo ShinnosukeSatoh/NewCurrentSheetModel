@@ -49,9 +49,13 @@ csfield = CSField()
 csfield.config(
     I_rho=16.7,
     I_phi=4.35E-4,
-    D=3.6,                  # 3.6 / 2.5
-    c=22.0,    # 15.0*math.sqrt(2) / 13.9*math.sqrt(2)
-    d=26.0,    # 24.8*math.sqrt(2) / 25.0*math.sqrt(2)
+    D=3.6,          # 3.6 / 2.5
+    c1=12.6,
+    c2=22.0,
+    c3=25.5,
+    w1=-0.13,
+    w2=2.18,
+    w3=-2.11
 )
 
 
@@ -296,8 +300,8 @@ theta_modelfp = np.radians(90.0-result_arr[:, 2])
 phi_modelfp = np.radians(360.0-result_arr[:, 3])
 x_modelfp_polar = np.sin(theta_modelfp)*np.cos(phi_modelfp)
 y_modelfp_polar = np.sin(theta_modelfp)*np.sin(phi_modelfp)
-F.ax[0].plot(x_modelfp_polar, y_modelfp_polar, c='r',
-             linewidth=1.0, linestyle='-', zorder=0.95)
+F.ax[0].plot(x_modelfp_polar, y_modelfp_polar, c=UC.pink,
+             linewidth=2.0, linestyle='-', zorder=0.95)
 
 # FASTER footpath at 900 km
 result_arr = np.loadtxt('results/FP_GA_SOUTH_FASTER.txt')
@@ -305,8 +309,8 @@ theta_modelfp = np.radians(90.0-result_arr[:, 2])
 phi_modelfp = np.radians(360.0-result_arr[:, 3])
 x_modelfp_polar = np.sin(theta_modelfp)*np.cos(phi_modelfp)
 y_modelfp_polar = np.sin(theta_modelfp)*np.sin(phi_modelfp)
-F.ax[1].plot(x_modelfp_polar, y_modelfp_polar, c='r',
-             linewidth=1.0, linestyle='-', zorder=0.95)
+F.ax[1].plot(x_modelfp_polar, y_modelfp_polar, c=UC.pink,
+             linewidth=2.0, linestyle='-', zorder=0.95)
 
 # Connerney+ 2022 surface reference 0 km
 theta_modelfp = np.radians(90.0-gfp_ref_pos_N[:, 0])
@@ -314,7 +318,7 @@ phi_modelfp = np.radians(360.0-gfp_ref_pos_N[:, 1])
 x_modelfp_polar = np.sin(theta_modelfp)*np.cos(phi_modelfp)
 y_modelfp_polar = np.sin(theta_modelfp)*np.sin(phi_modelfp)
 F.ax[0].plot(x_modelfp_polar, y_modelfp_polar, c='k',
-             linewidth=1.0, linestyle='--', zorder=0.95)
+             linewidth=1.6, linestyle=(0, (4, 7)), zorder=0.95)
 
 # Connerney+ 2022 surface reference 0 km
 theta_modelfp = np.radians(90.0-gfp_ref_pos_S[:, 0])
@@ -322,7 +326,7 @@ phi_modelfp = np.radians(360.0-gfp_ref_pos_S[:, 1])
 x_modelfp_polar = np.sin(theta_modelfp)*np.cos(phi_modelfp)
 y_modelfp_polar = np.sin(theta_modelfp)*np.sin(phi_modelfp)
 F.ax[1].plot(x_modelfp_polar, y_modelfp_polar, c='k',
-             linewidth=1.0, linestyle='--', zorder=0.95)
+             linewidth=1.6, linestyle=(0, (4, 7)), zorder=0.95)
 
 # Longitudinal grid
 s3wlon_grid = np.linspace(0, 360, 9)
