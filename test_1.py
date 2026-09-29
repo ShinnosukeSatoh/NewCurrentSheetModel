@@ -40,10 +40,10 @@ RJ = 71492.0E+3          # JUPITER RADIUS [m]
 csfield = CSField()
 csfield.config(
     I_rho=16.7,
-    I_phi=1.2E-4,
-    D=3.0,                  # 3.6 / 2.5
-    c=13.6*math.sqrt(2),    # 15.0 / 13.9
-    d=25.0*math.sqrt(2),    # 24.8 / 25.0
+    I_phi=4.35E-4,
+    D=3.6,                  # 3.6 / 2.5
+    c=22.0,    # 15.0*math.sqrt(2) / 13.9*math.sqrt(2)
+    d=26.0,    # 24.8*math.sqrt(2) / 25.0*math.sqrt(2)
 )
 
 
@@ -299,3 +299,27 @@ legend = F.legend(ax_idx=0,
 legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
 
 plt.savefig('B1_norm.png', bbox_inches='tight')
+
+
+# ===========================================================
+# パラメータcとdのチョイスを考える
+# ===========================================================
+rho_p = 15.0
+c = np.arange(5, 25+1, 1)
+d = np.arange(5, 35+1, 1)
+c, d = np.meshgrid(c, d)[0], np.meshgrid(c, d)[1]
+f_i = (c**2-2*rho_p**2)/((rho_p**2+c**2)**(5/2)) - \
+    (d**2-2*rho_p**2)/((rho_p**2+d**2)**(5/2))
+
+fig, ax = plt.subplots()
+ax.set_xlabel(r'c [$R_{\rm J}$]')
+ax.set_ylabel(r'd [$R_{\rm J}$]')
+ax.set_xticks(np.arange(5, np.max(c)+1, 5))
+ax.set_yticks(np.arange(5, np.max(d)+1, 5))
+pc = ax.pcolormesh(
+    c[0, :], d[:, 0], np.where(c < d, f_i, np.nan)
+)
+fig.colorbar(pc, ax=ax)
+fig.tight_layout()
+plt.savefig('c_d_parameter.png')
+plt.close()
