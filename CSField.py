@@ -38,17 +38,17 @@ class CSField():
             c1=12.6,
             c2=22.0,
             c3=25.5,
+            c4=0.0,
             w1=-0.13,
             w2=2.19,
-            w3=-2.09
+            w3=-2.09,
+            w4=0.0,
     ):
         """
         Args:
             I_rho (float): Radial current intensity [MA]
             I_phi (float): Azimuthal current surface density [MA m-1]
             D (float): Half thickness of the current sheet [RJ]
-            c (float): c < d [RJ]
-            d (float): c < d [RJ]
             theta_d_deg (float): Tilt angle of current sheet normal [deg]
             phi_d_deg (float): Azimuthal angle of the tilt of
                                 the current sheet normal sheet tilt
@@ -56,9 +56,11 @@ class CSField():
             c1 (float): c1 < c2 < c3 [RJ]
             c2 (float): c1 < c2 < c3 [RJ]
             c3 (float): c1 < c2 < c3 [RJ]
+            c4 (float): [RJ]
             w1 (float): Weight of the Hankel kernel
             w2 (float): Weight of the Hankel kernel
             w3 (float): Weight of the Hankel kernel
+            w4 (float): Weight of the Hankel kernel
         """
         self.I_rho = I_rho*1E+6           # Radial current inteisity [A]
         self.I_phi = I_phi*(1E+6)         # Azimuthal current density [A m-1]
@@ -68,9 +70,11 @@ class CSField():
         self.c1 = c1                      # c1 < c2 < c3 [RJ]
         self.c2 = c2                      # c1 < c2 < c3 [RJ]
         self.c3 = c3                      # c1 < c2 < c3 [RJ]
+        self.c4 = c4                      # [RJ]
         self.w1 = w1                      # Weight of the Hankel kernel
         self.w2 = w2                      # Weight of the Hankel kernel
         self.w3 = w3                      # Weight of the Hankel kernel
+        self.w4 = w4                      # Weight of the Hankel kernel
 
     def _sys3_2_cs(
             self,
@@ -338,27 +342,11 @@ class CSField():
             output_coords
         )
 
-    def I_phi_profil_2(
-        self,
-        MLT,
-        rho_cs
-    ):
-        """
-        Args:
-            MLT (float): [hr]
-            rho_cs (float): [RJ]
-
-        return: [A m-1]
-        """
-        f1 = self.I_phi*(rho_cs)/(((rho_cs)**2+(self.c)**2)**(1.5))
-        f2 = self.I_phi*(rho_cs)/(((rho_cs)**2+(self.d)**2)**(1.5))
-
-        return f1-f2
-
     def I_phi_profile(
         self,
         MLT,
-        rho_cs
+        rho_cs,
+        each_term=False,
     ):
         """
         Args:
@@ -370,7 +358,17 @@ class CSField():
         f1 = self.I_phi*(rho_cs)/(((rho_cs)**2+(self.c1)**2)**(1.5))
         f2 = self.I_phi*(rho_cs)/(((rho_cs)**2+(self.c2)**2)**(1.5))
         f3 = self.I_phi*(rho_cs)/(((rho_cs)**2+(self.c3)**2)**(1.5))
-        return self.w1*f1+self.w2*f2+self.w3*f3
+        total = self.w1*f1+self.w2*f2+self.w3*f3
+        if self.w4 != 0.0:
+            f4 = self.I_phi*(rho_cs)/(((rho_cs)**2+(self.c4)**2)**(1.5))
+            total = self.w1*f1+self.w2*f2+self.w3*f3+self.w4*f4
+        if each_term:
+            self.f1 = f1
+            self.f2 = f2
+            self.f3 = f3
+            if self.w4 != 0.0:
+                self.f4 = f4
+        return total
 
     def J_phi_Wang22(self, rho_cs, z, MLT):
         """
