@@ -31,18 +31,20 @@ class CSField():
     def config(
             self,
             I_rho=16.7,
-            I_phi=3.8E-4,
+            I_phi=8.0E-5,
             D=3.6,
             theta_d_deg=9.3,
             phi_d_deg=155.8,
-            c1=12.6,
-            c2=22.0,
-            c3=25.5,
-            c4=0.0,
-            w1=-0.13,
-            w2=2.19,
-            w3=-2.09,
-            w4=0.0,
+            c1=10.8,        # 12.6 / 10.6
+            c2=14.7,        # 20.7 / 14.7
+            c3=46.0,        # 26.0 / 46.0
+            c4=5.0,         # 45.0 / 45.0
+            w1=-0.29,       # -0.20 / -0.30
+            w2=1.36,        # 2.18 / 1.34
+            w3=-0.82,       # -1.95 / -0.82
+            w4=-0.016,      # 0.29 / 0.0
+            a0=0.0,         # -0.17
+            MLT0=21.4
     ):
         """
         Args:
@@ -61,20 +63,24 @@ class CSField():
             w2 (float): Weight of the Hankel kernel
             w3 (float): Weight of the Hankel kernel
             w4 (float): Weight of the Hankel kernel
+            a0 (float): Amplitude of the MLT periodocity
+            MLT0 (float): Phase MLT [hr]
         """
-        self.I_rho = I_rho*1E+6           # Radial current inteisity [A]
-        self.I_phi = I_phi*(1E+6)         # Azimuthal current density [A m-1]
-        self.D = D                        # Current sheet half thickness [RJ]
-        self.theta_d_deg = theta_d_deg    # [deg]
-        self.phi_d_deg = phi_d_deg        # [deg]
-        self.c1 = c1                      # c1 < c2 < c3 [RJ]
-        self.c2 = c2                      # c1 < c2 < c3 [RJ]
-        self.c3 = c3                      # c1 < c2 < c3 [RJ]
-        self.c4 = c4                      # [RJ]
-        self.w1 = w1                      # Weight of the Hankel kernel
-        self.w2 = w2                      # Weight of the Hankel kernel
-        self.w3 = w3                      # Weight of the Hankel kernel
-        self.w4 = w4                      # Weight of the Hankel kernel
+        self.I_rho = I_rho*1E+6          # Radial current inteisity [A]
+        self.I_phi = I_phi*(1E+6)        # Azimuthal current density [A m-1]
+        self.D = D                       # Current sheet half thickness [RJ]
+        self.theta_d_deg = theta_d_deg   # [deg]
+        self.phi_d_deg = phi_d_deg       # [deg]
+        self.c1 = c1                     # c1 < c2 < c3 [RJ]
+        self.c2 = c2                     # c1 < c2 < c3 [RJ]
+        self.c3 = c3                     # c1 < c2 < c3 [RJ]
+        self.c4 = c4                     # [RJ]
+        self.w1 = w1                     # Weight of the Hankel kernel
+        self.w2 = w2                     # Weight of the Hankel kernel
+        self.w3 = w3                     # Weight of the Hankel kernel
+        self.w4 = w4                     # Weight of the Hankel kernel
+        self.a0 = a0                     # Amplitude of the MLT periodocity
+        self.MLT0 = MLT0                 # Phase MLT [hr]
 
     def _sys3_2_cs(
             self,
@@ -142,19 +148,19 @@ class CSField():
             self,
             x,
             y,
-            z
+            z,
+            MLT=0.0
     ):
         """
         Args:
             x (float): SIII right hand [RJ]
             y (float): SIII right hand [RJ]
             z (float): SIII right hand [RJ]
+            MLT (float): Magnetic local time [hr]
 
         Returns:
             tuple: B1 vector (B_rho, B_phi, B_Z) [T]
         """
-        I_rho = self.I_rho  # Radial current density [A]
-        I_phi = self.I_phi  # Azimuthal current density [A]
         c1 = self.c1        # [RJ]
         c2 = self.c2        # [RJ]
         c3 = self.c3        # [RJ]
@@ -162,6 +168,9 @@ class CSField():
         w2 = self.w2        # [RJ]
         w3 = self.w3        # [RJ]
         D = self.D          # Half thickness of the current sheet [RJ]
+        I_rho = self.I_rho  # Radial current density [A]
+        I_phi = self.I_phi*(1+self.a0*math.cos(np.pi*(MLT-self.MLT0)/12.0))
+        # Azimuthal current density [A m-1]
 
         x_cs, y_cs, z_cs, rho_cs, phi_cs = self._sys3_2_cs(
             x,
@@ -323,6 +332,7 @@ class CSField():
             x,
             y,
             z,
+            MLT=0.0,
             output_coords='cartesian'
     ):
         """
@@ -330,11 +340,12 @@ class CSField():
             x (float): SIII right hand [RJ]
             y (float): SIII right hand [RJ]
             z (float): SIII right hand [RJ]
+            MLT (float): Magnetic local time [hr]
             output_coords (str): 'cartesian', 'cylindrical', or 'spherical'
 
         return: [A m-1]
         """
-        B_x, B_y, B_z = self._B_vector_cylindrical(x, y, z)
+        B_x, B_y, B_z = self._B_vector_cylindrical(x, y, z, MLT)
 
         return self._convert_coordinates(
             B_x, B_y, B_z,
@@ -352,6 +363,7 @@ class CSField():
         Args:
             MLT (float): [hr]
             rho_cs (float): [RJ]
+            each_term (bool): True for plot of each term (w_i*c_i)
 
         return: [A m-1]
         """
@@ -361,13 +373,14 @@ class CSField():
         total = self.w1*f1+self.w2*f2+self.w3*f3
         if self.w4 != 0.0:
             f4 = self.I_phi*(rho_cs)/(((rho_cs)**2+(self.c4)**2)**(1.5))
-            total = self.w1*f1+self.w2*f2+self.w3*f3+self.w4*f4
+            total += self.w4*f4
         if each_term:
             self.f1 = f1
             self.f2 = f2
             self.f3 = f3
             if self.w4 != 0.0:
                 self.f4 = f4
+        total *= 1+self.a0*math.cos(2*np.pi*(MLT-self.MLT0)/24.0)
         return total
 
     def J_phi_Wang22(self, rho_cs, z, MLT):

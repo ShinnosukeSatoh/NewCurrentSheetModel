@@ -40,16 +40,16 @@ RJ = 71492.0E+3          # JUPITER RADIUS [m]
 csfield = CSField()
 csfield.config(
     I_rho=16.7,
-    I_phi=2.5E-4,
+    I_phi=8.0E-5,
     D=3.6,          # 3.6 / 2.5
-    c1=12.6,
-    c2=20.7,
-    c3=26.0,
-    c4=45.0,
-    w1=-0.20,
-    w2=2.18,
-    w3=-1.95,
-    w4=0.29,
+    c1=10.8,        # 12.6
+    c2=14.7,        # 20.7
+    c3=46.0,        # 26.0
+    c4=5.0,
+    w1=-0.29,       # -0.20
+    w2=1.36,        # 2.18
+    w3=-0.82,       # -1.95
+    w4=-0.016,
 )
 
 
@@ -186,11 +186,11 @@ F.ax.plot(rho_cs/RJ,
           csfield.w3*csfield.f3*(1E-6)*RJ,
           color='k', linestyle='-.',
           label=r'$w_3 f_3$')
-F.ax.plot(rho_cs/RJ,
-          csfield.w4*csfield.f4*(1E-6)*RJ,
-          color='k', linestyle=(2, (2, 2)),
-          label=r'$w_4 f_4$')
-
+if csfield.w4 != 0.0:
+    F.ax.plot(rho_cs/RJ,
+              csfield.w4*csfield.f4*(1E-6)*RJ,
+              color='k', linestyle=(2, (2, 2)),
+              label=r'$w_4 f_4$')
 F.ax.axhline(y=0, linewidth=1.0, color=UC.lightgray)
 
 F.ax.set_title(r'Current density', weight='bold')
