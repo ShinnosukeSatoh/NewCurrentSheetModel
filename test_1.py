@@ -40,16 +40,16 @@ RJ = 71492.0E+3          # JUPITER RADIUS [m]
 csfield = CSField()
 csfield.config(
     I_rho=16.7,
-    I_phi=8.0E-5,
-    D=3.6,          # 3.6 / 2.5
+    I_phi=7.6E-5,
+    D=2.5,          # 3.6 / 2.5
     c1=10.8,        # 12.6
-    c2=14.7,        # 20.7
+    c2=14.6,        # 20.7
     c3=46.0,        # 26.0
     c4=5.0,
     w1=-0.29,       # -0.20
-    w2=1.36,        # 2.18
-    w3=-0.82,       # -1.95
-    w4=-0.016,
+    w2=1.39,        # 2.18
+    w3=-0.90,       # -1.95
+    w4=-0.025,
 )
 
 
@@ -166,9 +166,9 @@ F.set_xaxis(label=r'$\rho$ [$R_{\rm J}$]',
             minor_num=5)
 F.set_yaxis(ax_idx=0,
             label=r'$I_{\varphi}(R)$ [MA $R_{\rm J}^{-1}$]',
-            min=-60.0, max=60.0,
-            ticks=np.linspace(-60, 60, 7),
-            ticklabels=np.linspace(-60, 60, 7, dtype=int),
+            min=-30.0, max=30.0,
+            ticks=np.linspace(-30, 30, 7),
+            ticklabels=np.linspace(-30, 30, 7, dtype=int),
             minor_num=2,)
 
 F.ax.plot(rho_cs/RJ, I_phi_new*(1E-6)*RJ,
@@ -196,7 +196,7 @@ F.ax.axhline(y=0, linewidth=1.0, color=UC.lightgray)
 F.ax.set_title(r'Current density', weight='bold')
 
 legend = F.legend(ax_idx=0,
-                  ncol=1, markerscale=1.0,
+                  ncol=2, markerscale=1.0,
                   loc='upper right',
                   handlelength=1.6,
                   textcolor=False,

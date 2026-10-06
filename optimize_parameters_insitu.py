@@ -69,11 +69,11 @@ def load_MAGdata(PJ_num):
 # ===========================================================
 # CALCULATE THE INTERNAL FIELD WITH JRM33
 # ===========================================================
-def B_internal(time_arr, rx_pc, ry_pc, rz_pc):
-    Bx0_pc = np.zeros(time_arr.size)
-    By0_pc = np.zeros(time_arr.size)
-    Bz0_pc = np.zeros(time_arr.size)
-    for i in range(time_arr.size):
+def B_internal(n_time_arr, rx_pc, ry_pc, rz_pc):
+    Bx0_pc = np.zeros(n_time_arr)
+    By0_pc = np.zeros(n_time_arr)
+    Bz0_pc = np.zeros(n_time_arr)
+    for i in range(n_time_arr):
         Bx0_pc[i], By0_pc[i], Bz0_pc[i] = jm.Internal.Field(rx_pc[i],
                                                             ry_pc[i],
                                                             rz_pc[i])  # [nT]
@@ -86,7 +86,7 @@ def dB_obs(
         Bx_pc, By_pc, Bz_pc,
         cos_theta, sin_theta,
         cos_phi, sin_phi):
-    Bx0_pc, By0_pc, Bz0_pc = B_internal(time_arr, rx_pc, ry_pc, rz_pc)
+    Bx0_pc, By0_pc, Bz0_pc = B_internal(time_arr.size, rx_pc, ry_pc, rz_pc)
     dBx = Bx_pc - Bx0_pc
     dBy = By_pc - By0_pc
     dBz = Bz_pc - Bz0_pc
@@ -105,7 +105,10 @@ def plot_best(
         dBr, dBtheta, dBphi,
         dBr2, dBtheta2, dBphi2,
 ):
-    r_ticks_ref = np.arange(5, 30+1, 1)
+    if PJ_num in [17]:
+        r_ticks_ref = np.arange(8, 30+1, 1)
+    else:
+        r_ticks_ref = np.arange(5, 30+1, 1)
     r_ticks = np.zeros((r_ticks_ref.size*2, 2))
     for i in range(r_ticks_ref.size):
         r_i = r_ticks_ref[-1]-i
@@ -152,9 +155,9 @@ def plot_best(
                 minor_num=4)
     F.set_yaxis(ax_idx=1,
                 label=r'$\delta B_{\theta}$ [nT]',
-                min=-100, max=20,
-                ticks=np.linspace(-100, 20, 7),
-                ticklabels=np.linspace(-100, 20, 7, dtype=int),
+                min=-150, max=30,
+                ticks=np.linspace(-150, 30, 7),
+                ticklabels=np.linspace(-150, 30, 7, dtype=int),
                 minor_num=4)
     F.set_yaxis(ax_idx=2,
                 label=r'$\delta B_{\varphi}$ [nT]',
@@ -176,11 +179,21 @@ def plot_best(
                  linewidth=1.9, label='FASTER', zorder=1.0)
 
     # Shades near Jupiter (< 5.0 RJ)
-    inner_idx = np.where((r_pc < 5.0))[0]
+    inner_idx = np.where((r_pc < np.min(r_ticks_ref)))[0]
     for i in range(F.nrows):
         F.ax[i].axvspan(time_arr[inner_idx[0]],
                         time_arr[inner_idx[-1]],
                         fc=UC.lightgray, ec=None, zorder=2.5)
+
+    # Shades in the outer region
+    outer_idx = np.where((r_pc < np.max(r_ticks_ref)))[0]
+    for i in range(F.nrows):
+        F.ax[i].axvspan(time_arr[0],
+                        time_arr[outer_idx[0]],
+                        fc=UC.lightgray, alpha=0.5, ec=None, zorder=2.5)
+        F.ax[i].axvspan(time_arr[outer_idx[-1]],
+                        time_arr[-1],
+                        fc=UC.lightgray, alpha=0.5, ec=None, zorder=2.5)
 
     # y = 0 line
     for i in range(F.nrows):
@@ -205,6 +218,10 @@ def plot_best(
 
     plt.savefig('img/insitu_fit/PJ'+str(PJ_num).zfill(2)+'.png',
                 bbox_inches='tight')
+
+    F.close()
+    plt.close()
+
     return None
 
 
@@ -216,8 +233,7 @@ def calc(
         n_time_arr,
         rx_pc, ry_pc, rz_pc, r_pc,
         cos_theta, sin_theta, cos_phi, sin_phi,
-        dBr, dBtheta, dBphi, MLT):
-
+        dBr, dBtheta, dBphi, MLT, PJ_num):
     # ===========================================================
     # CONFIGURE CSFIELD
     # ===========================================================
@@ -250,10 +266,16 @@ def calc(
     # RMSE（Root Mean Squared Error）
     # ===========================================================
     in_30rj = np.where(r_pc < 30.0)[0][0]
-    in_5rj = np.where(r_pc < 5.0)[0][0]
+    if PJ_num in [17]:
+        in_5rj = np.where(r_pc < 8.0)[0][0]
+    else:
+        in_5rj = np.where(r_pc < 5.0)[0][0]
     in_num = in_5rj-in_30rj-1
     out_30rj = np.where(r_pc < 30.0)[0][-1]
-    out_5rj = np.where(r_pc < 5.0)[0][-1]
+    if PJ_num in [17]:
+        out_5rj = np.where(r_pc < 8.0)[0][-1]
+    else:
+        out_5rj = np.where(r_pc < 5.0)[0][-1]
     out_num = out_30rj-out_5rj-1
 
     RMS = math.sqrt(
@@ -316,7 +338,8 @@ def main():
         dBr=dBr,
         dBtheta=dBtheta,
         dBphi=dBphi,
-        MLT=JunoMLT
+        MLT=JunoMLT,
+        PJ_num=PJ_num
     )
     start = time.time()
     with Pool(processes=parallel) as pool:
@@ -357,14 +380,40 @@ def main():
     plot_best(time_arr, r_pc, dBr,
               dBtheta, dBphi, dBr2, dBtheta2, dBphi2)
 
-    return None
+    return np.array([PJ_num, best_a, best_b, min_rms])
 
 
 if __name__ == '__main__':
-    PJ_num = 12
-    parallel = 4
+    PJ_list = [1, 3, 4, 5,
+               6, 7, 8, 9, 10,
+               11, 12, 13, 14, 15,
+               16, 17, 18, 19, 20,
+               21, 22, 23, 24, 25,
+               26, 27, 28, 29, 30,
+               32, 33, 34, 35,
+               36, 37, 38, 39, 40,
+               41, 42, 43, 44, 45,
+               46, 48, 49, 50]
+    parallel = 5
 
-    I_phi0_arr = 8.0E-5*np.linspace(0.75, 1.25, 20)
-    I_rho_arr = 16.7*np.linspace(0.5, 1.6, 16)
+    I_phi0_arr = 8.0E-5*np.linspace(0.7, 1.3, 30)
+    I_rho_arr = 16.7*np.linspace(0.15, 1.8, 21)
+    print('I_phi0 [10^-5]:', I_phi0_arr[0]*1E+5, I_phi0_arr[-1]*1E+5)
+    print('I_rho:', I_rho_arr[0], I_rho_arr[-1])
 
-    main()
+    save_arr = np.zeros((len(PJ_list), 4))
+    for i in range(len(PJ_list)):
+        PJ_num = PJ_list[i]
+        print('PJ:', PJ_num)
+        save_arr[i, :] = main()
+
+    print(save_arr)
+    print('RMS min, average:',
+          np.min(save_arr[:, 3]),
+          np.average(save_arr[:, 3]))
+
+    fname = 'results/insitu_fit/result_'
+    fname += 'PJ'+str(PJ_list[0]).zfill(2)+'_'
+    fname += 'PJ'+str(PJ_list[-1]).zfill(2)
+    fname += '.txt'
+    np.savetxt(fname, save_arr)
