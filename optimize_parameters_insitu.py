@@ -248,6 +248,8 @@ def calc(
             I_rho0=I_rho0,
             i_phi0=i_phi0,
             D=2.5,
+            c11=1.0, c12=23.571,
+            w11=0.1667, w12=1.5,
         )
         dBx2_pc[i], dBy2_pc[i], dBz2_pc[i] = csfield.magnetic_field(rx_pc[i],
                                                                     ry_pc[i],
@@ -407,7 +409,8 @@ if __name__ == '__main__':
                41, 42, 43, 44, 45,
                46, 48, 49, 50,
                51, 52, 53, 54, 55,
-               56, 57, 58, 59, 60]
+               56, 57, 58, 59, 60,
+               61, 62, 63, 64, 65]
     parallel = 5
 
     i_phi0_arr = 5.2E-5*np.linspace(0.7, 1.3, 30)
@@ -427,9 +430,8 @@ if __name__ == '__main__':
           np.min(save_arr[:, 3]),
           np.average(save_arr[:, 3]))
 
-    fname = 'results/insitu_fit/result_'
+    fname = 'results/insitu_fit_Bphi/result_'
     fname += 'PJ'+str(PJ_list[0]).zfill(2)+'_'
     fname += 'PJ'+str(PJ_list[-1]).zfill(2)
-    fname += '_rho0cs'
     fname += '.txt'
     np.savetxt(fname, save_arr)

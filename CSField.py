@@ -252,7 +252,7 @@ class CSField():
                 h12 = 1-np.exp(-rho_cs/c12)
                 h13 = 1-np.exp(-rho_cs/c13)
                 B_phi = w11*h11+w12*h12+w13*h13
-                B_phi *= -((MU0*I_rho)/(2*np.pi*RJ))*(z_cs/D)  # [T]
+                B_phi *= -((MU0*I_rho)/(2*np.pi*rho_cs*RJ))*(z_cs/D)  # [T]
                 # ↑ 分母に\rho_cs が抜けてる？
 
         elif abs(z_cs) > D:
@@ -298,7 +298,7 @@ class CSField():
                 h12 = 1-np.exp(-rho_cs/c12)
                 h13 = 1-np.exp(-rho_cs/c13)
                 B_phi = w11*h11+w12*h12+w13*h13
-                B_phi *= -sgn*((MU0*I_rho)/(2*np.pi*RJ))  # [T]
+                B_phi *= -sgn*((MU0*I_rho)/(2*np.pi*rho_cs*RJ))  # [T]
 
         # B_norm = math.sqrt(B_rho**2+B_phi**2+B_Z**2)
         # print('B_norm [nT]:', B_norm*1E+9)

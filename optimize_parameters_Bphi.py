@@ -443,9 +443,9 @@ if __name__ == '__main__':
                56, 57, 58, 59, 60]
     parallel = 6
 
-    c11_arr = np.linspace(1.0, 5.0, 6)
-    c12_arr = np.linspace(15.0, 30.0, 6)
-    w11_arr = np.linspace(-1.0, 1.0, 8)
-    w12_arr = np.linspace(-1.0, 1.0, 8)
+    c11_arr = np.linspace(1.0, 6.0, 8)
+    c12_arr = np.linspace(15.0, 35.0, 8)
+    w11_arr = np.linspace(-1.5, 1.5, 10)
+    w12_arr = np.linspace(-1.5, 1.5, 10)
 
     main()
