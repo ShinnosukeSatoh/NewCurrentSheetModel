@@ -237,7 +237,7 @@ def calc(
     # ===========================================================
     # CONFIGURE CSFIELD
     # ===========================================================
-    I_phi0, I_rho = params
+    i_phi0, I_rho0 = params
     csfield = CSField()
 
     dBx2_pc = np.zeros(n_time_arr)
@@ -245,8 +245,8 @@ def calc(
     dBz2_pc = np.zeros(n_time_arr)
     for i in range(n_time_arr):
         csfield.config(
-            I_rho=I_rho,
-            I_phi=I_phi0,
+            I_rho0=I_rho0,
+            i_phi0=i_phi0,
             D=2.5,
         )
         dBx2_pc[i], dBy2_pc[i], dBz2_pc[i] = csfield.magnetic_field(rx_pc[i],
@@ -278,6 +278,7 @@ def calc(
         out_5rj = np.where(r_pc < 5.0)[0][-1]
     out_num = out_30rj-out_5rj-1
 
+    # B_phiもフルで使う
     RMS = math.sqrt(
         (np.sum(
             (dBr[in_30rj:in_5rj]-dBr2_pc[in_30rj:in_5rj])**2 +
@@ -288,6 +289,17 @@ def calc(
             (dBtheta[out_5rj:out_30rj]-dBtheta2_pc[out_5rj:out_30rj])**2 +
             (dBphi[out_5rj:out_30rj]-dBphi2_pc[out_5rj:out_30rj])**2
         ))/(3*in_num+3*out_num))
+
+    # B_phiのinwardはフィッティングに使わない
+    """RMS = math.sqrt(
+        (np.sum(
+            (dBr[in_30rj:in_5rj]-dBr2_pc[in_30rj:in_5rj])**2 +
+            (dBtheta[in_30rj:in_5rj]-dBtheta2_pc[in_30rj:in_5rj])**2
+        ) + np.sum(
+            (dBr[out_5rj:out_30rj]-dBr2_pc[out_5rj:out_30rj])**2 +
+            (dBtheta[out_5rj:out_30rj]-dBtheta2_pc[out_5rj:out_30rj])**2 +
+            (dBphi[out_5rj:out_30rj]-dBphi2_pc[out_5rj:out_30rj])**2
+        ))/(2*in_num+3*out_num))"""
 
     # print('RMS [nT]:', RMS)
 
@@ -315,7 +327,7 @@ def main():
     )
 
     # Create arg mesh
-    a0_mesh, a1_mesh = np.meshgrid(I_phi0_arr, I_rho_arr)
+    a0_mesh, a1_mesh = np.meshgrid(i_phi0_arr, I_rho0_arr)
     # -> shape is like (a1.size, a0.size, a2.size)
 
     args = list(zip(
@@ -356,8 +368,8 @@ def main():
 
     csfield = CSField()
     csfield.config(
-        I_rho=best_b,
-        I_phi=best_a,
+        I_rho0=best_b,
+        i_phi0=best_a,
         D=2.5,
     )
 
@@ -393,13 +405,16 @@ if __name__ == '__main__':
                32, 33, 34, 35,
                36, 37, 38, 39, 40,
                41, 42, 43, 44, 45,
-               46, 48, 49, 50]
+               46, 48, 49, 50,
+               51, 52, 53, 54, 55,
+               56, 57, 58, 59, 60]
     parallel = 5
 
-    I_phi0_arr = 8.0E-5*np.linspace(0.7, 1.3, 30)
-    I_rho_arr = 16.7*np.linspace(0.15, 1.8, 21)
-    print('I_phi0 [10^-5]:', I_phi0_arr[0]*1E+5, I_phi0_arr[-1]*1E+5)
-    print('I_rho:', I_rho_arr[0], I_rho_arr[-1])
+    i_phi0_arr = 5.2E-5*np.linspace(0.7, 1.3, 30)
+    I_rho0_arr = 16.7*np.linspace(0.15, 1.8, 21)
+    # I_rho0_arr = 20.0*np.linspace(0.15, 2.5, 21)
+    print('i_phi0 [10^-5]:', i_phi0_arr[0]*1E+5, i_phi0_arr[-1]*1E+5)
+    print('I_rho0:', I_rho0_arr[0], I_rho0_arr[-1])
 
     save_arr = np.zeros((len(PJ_list), 4))
     for i in range(len(PJ_list)):
@@ -415,5 +430,6 @@ if __name__ == '__main__':
     fname = 'results/insitu_fit/result_'
     fname += 'PJ'+str(PJ_list[0]).zfill(2)+'_'
     fname += 'PJ'+str(PJ_list[-1]).zfill(2)
+    fname += '_rho0cs'
     fname += '.txt'
     np.savetxt(fname, save_arr)

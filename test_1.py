@@ -39,33 +39,34 @@ RJ = 71492.0E+3          # JUPITER RADIUS [m]
 # ===========================================================
 csfield = CSField()
 csfield.config(
-    I_rho=16.7,
-    I_phi=7.6E-5,
-    D=2.5,          # 3.6 / 2.5
-    c1=10.8,        # 12.6
-    c2=14.6,        # 20.7
-    c3=46.0,        # 26.0
-    c4=5.0,
-    w1=-0.29,       # -0.20
-    w2=1.39,        # 2.18
-    w3=-0.90,       # -1.95
-    w4=-0.025,
+    I_rho0=16.7,
+    i_phi0=5.2E-5,
+    D=2.5,          # 2.5
+    c1=5.0,         # 10.8
+    c2=14.0,        # 14.6
+    c3=46.0,        # 46.0
+    c4=5.0,         # 5.0
+    w1=-0.06,       # -0.29
+    w2=1.39,        # 1.39
+    w3=-0.90,       # -0.90
+    w4=0,           # -0.025
+    rho_cs0=4
 )
 
 
 # ===========================================================
-# CURRENT DENSITY
+# AZIMUTHAL CURRENT DENSITY
 # ===========================================================
 # FASTER
 rho_cs = np.linspace(0.0, 100.0, 300)*RJ     # [m]
-I_phi_new = csfield.I_phi_profile(
+i_phi_new = csfield.i_phi_profile(
     MLT=0.0,
     rho_cs=rho_cs/RJ,
     each_term=True,
 )   # [A m-1]
-J_phi_new = (I_phi_new/(2*csfield.D*RJ))*(1E-6)*(RJ**2)  # [MA RJ-2]
-# print('I_phi_new [MA RJ-1]:', I_phi_new*1E-6*RJ)
-print('I_phi_0 [MA RJ-1]:', csfield.I_phi*1E-6*RJ)
+J_phi_new = (i_phi_new/(2*csfield.D*RJ))*(1E-6)*(RJ**2)  # [MA RJ-2]
+I_rho_new = csfield.I_rho_profile(rho_cs=rho_cs/RJ, each_term=True)
+print('i_phi_0 [MA RJ-1]:', csfield.i_phi0*1E-6*RJ)
 print('np.min(J_phi_new):', np.min(J_phi_new))
 
 # Wang+2022
@@ -78,17 +79,17 @@ for i in range(rho_cs.size):
     J_phi_w22_6h[i] = csfield.J_phi_Wang22(rho_cs[i]/RJ, z=0, MLT=6.0)
     J_phi_w22_12h[i] = csfield.J_phi_Wang22(rho_cs[i]/RJ, z=0, MLT=12.0)
     J_phi_w22_18h[i] = csfield.J_phi_Wang22(rho_cs[i]/RJ, z=0, MLT=18.0)
-    I_phi_w22_6h[i] = csfield.I_phi_Wang22(rho_cs[i]/RJ, MLT=6.0)
-    I_phi_w22_18h[i] = csfield.I_phi_Wang22(rho_cs[i]/RJ, MLT=18.0)
+    I_phi_w22_6h[i] = csfield.i_phi_Wang22(rho_cs[i]/RJ, MLT=6.0)
+    I_phi_w22_18h[i] = csfield.i_phi_Wang22(rho_cs[i]/RJ, MLT=18.0)
 
 # Con2020
 rho_cs_con20 = np.linspace(7.8, 51.4, 100)*RJ         # [m]
-I_phi_con20 = csfield.I_phi_Con20(rho_cs_con20/RJ)    # [A m-1]
-J_phi_con20 = (I_phi_con20/(2*3.6*RJ))*(1E-6)*RJ*RJ   # [MA RJ-2]
+i_phi_con20 = csfield.i_phi_Con20(rho_cs_con20/RJ)    # [A m-1]
+J_phi_con20 = (i_phi_con20/(2*3.6*RJ))*(1E-6)*RJ*RJ   # [MA RJ-2]
 
 
 # ===========================================================
-# 面電流密度の動径分布を描いてみる
+# 面電流密度(方位角電流)の動径分布を描いてみる
 # ===========================================================
 F = ShareXaxis()
 F.fontsize = 21
@@ -107,16 +108,16 @@ F.set_xaxis(label=r'$\rho$ [$R_{\rm J}$]',
             ticklabels=xticklabels,
             minor_num=5)
 F.set_yaxis(ax_idx=0,
-            label=r'$I_{\varphi}(R)$ [MA $R_{\rm J}^{-1}$]',
+            label=r'$i_{\varphi}(R)$ [MA $R_{\rm J}^{-1}$]',
             min=-0.2, max=18.0,
             ticks=np.linspace(0, 18, 10),
             ticklabels=np.linspace(0, 18, 10, dtype=int),
             minor_num=2,)
 
-F.ax.plot(rho_cs/RJ, I_phi_new*(1E-6)*RJ,
+F.ax.plot(rho_cs/RJ, i_phi_new*(1E-6)*RJ,
           color=UC.red, linewidth=3.0,
           label='New model')
-F.ax.plot(rho_cs_con20/RJ, I_phi_con20*(1E-6)*RJ,
+F.ax.plot(rho_cs_con20/RJ, i_phi_con20*(1E-6)*RJ,
           color='k',
           label='Con2020')
 F.ax.plot(rho_cs/RJ, I_phi_w22_6h,
@@ -142,11 +143,11 @@ legend = F.legend(ax_idx=0,
                   handletextpad=0.4)
 legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
 
-plt.savefig('I_phi.png', bbox_inches='tight')
+plt.savefig('i_phi.png', bbox_inches='tight')
 
 
 # ===========================================================
-# 面電流密度の動径分布を描いてみる (項ごとに)
+# 面電流密度(方位角電流)の動径分布を描いてみる (項ごとに)
 # ===========================================================
 F = ShareXaxis()
 F.fontsize = 21
@@ -165,15 +166,12 @@ F.set_xaxis(label=r'$\rho$ [$R_{\rm J}$]',
             ticklabels=xticklabels,
             minor_num=5)
 F.set_yaxis(ax_idx=0,
-            label=r'$I_{\varphi}(R)$ [MA $R_{\rm J}^{-1}$]',
-            min=-30.0, max=30.0,
-            ticks=np.linspace(-30, 30, 7),
-            ticklabels=np.linspace(-30, 30, 7, dtype=int),
-            minor_num=2,)
+            label=r'$i_{\varphi}(R)$ [MA $R_{\rm J}^{-1}$]',
+            min=-10.0, max=20.0,
+            ticks=np.linspace(-10, 20, 7),
+            ticklabels=np.linspace(-10, 20, 7, dtype=int),
+            minor_num=5,)
 
-F.ax.plot(rho_cs/RJ, I_phi_new*(1E-6)*RJ,
-          color=UC.red, linewidth=3.0,
-          label='New model (total)')
 F.ax.plot(rho_cs/RJ,
           csfield.w1*csfield.f1*(1E-6)*RJ,
           color='k', linestyle='-',
@@ -191,7 +189,13 @@ if csfield.w4 != 0.0:
               csfield.w4*csfield.f4*(1E-6)*RJ,
               color='k', linestyle=(2, (2, 2)),
               label=r'$w_4 f_4$')
-F.ax.axhline(y=0, linewidth=1.0, color=UC.lightgray)
+
+F.ax.plot(rho_cs/RJ, i_phi_new*(1E-6)*RJ,
+          color=UC.red, linewidth=3.0,
+          label='New model (total)')
+F.ax.fill_between([0, 100], [-200, 0],
+                  color=UC.lightgray,
+                  alpha=0.4, zorder=-5)
 
 F.ax.set_title(r'Current density', weight='bold')
 
@@ -204,7 +208,73 @@ legend = F.legend(ax_idx=0,
                   handletextpad=0.4)
 legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
 
-plt.savefig('I_phi_terms.png', bbox_inches='tight')
+plt.savefig('i_phi_terms.png', bbox_inches='tight')
+
+
+# ===========================================================
+# 面電流密度(動径方向電流)の動径分布を描いてみる (項ごとに)
+# ===========================================================
+w11, w12, w13 = 0.0, 0.0, 50
+F = ShareXaxis()
+F.fontsize = 21
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=1, figsize=(5.5, 4.7), dpi='XL')
+F.hspace = 0.15
+F.initialize()
+
+xticks = np.arange(0, 65+1, 5)
+xticklabels = np.arange(0, 65+1, 5, dtype=int)
+
+F.set_xaxis(label=r'$\rho$ [$R_{\rm J}$]',
+            min=0.0, max=35.0,
+            ticks=xticks,
+            ticklabels=xticklabels,
+            minor_num=5)
+F.set_yaxis(ax_idx=0,
+            label=r'$I_{\rho}(R)$ [MA]',
+            min=-10.0, max=20.0,
+            ticks=np.linspace(-10, 20, 7),
+            ticklabels=np.linspace(0-10, 20, 7, dtype=int),
+            minor_num=5,)
+
+F.ax.plot(rho_cs/RJ,
+          (w11*csfield.f11+w12*csfield.f12+w13*csfield.f13)*(1E+3),
+          color=UC.red, linestyle='-',
+          linewidth=2.0,
+          label=r'New model')
+F.ax.plot(rho_cs/RJ,
+          (w11*csfield.f11)*(1E+3),
+          color='k', linestyle='--',
+          linewidth=1.0,
+          label=r'$w_{11}f_{11}$')
+F.ax.plot(rho_cs/RJ,
+          (w12*csfield.f12)*(1E+3),
+          color='k', linestyle='-.',
+          linewidth=1.0,
+          label=r'$w_{12}f_{12}$')
+F.ax.plot(rho_cs/RJ,
+          (w13*csfield.f13)*(1E+3),
+          color='k', linestyle=(2, (2, 2)),
+          linewidth=1.0,
+          label=r'$w_{13}f_{13}$')
+F.ax.plot(rho_cs/RJ,
+          16.7*np.ones(rho_cs.size),
+          color='k', linestyle='-',
+          label=r'Con2020')
+
+F.ax.set_title(r'Current density', weight='bold')
+
+legend = F.legend(ax_idx=0,
+                  ncol=2, markerscale=1.0,
+                  loc='upper right',
+                  handlelength=1.6,
+                  textcolor=False,
+                  fontsize_scale=0.65,
+                  handletextpad=0.4)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
+
+plt.savefig('I_rho_terms.png', bbox_inches='tight')
 
 
 # ===========================================================
@@ -324,7 +394,7 @@ F.ax.plot(r0_arr/RJ,
 
 F.ax.fill_between([0, 100], [-200, 0],
                   color=UC.lightgray,
-                  alpha=0.5, zorder=-5)
+                  alpha=0.4, zorder=-5)
 
 F.ax.set_title(r'Magnetic field intensity', weight='bold')
 

@@ -30,26 +30,33 @@ class CSField():
 
     def config(
             self,
-            I_rho=16.7,
-            I_phi=8.0E-5,
+            I_rho0=16.7,
+            i_phi0=5.2E-5,   # / 8.0E-5
             D=2.5,
             theta_d_deg=9.3,
             phi_d_deg=155.8,
-            c1=10.8,        # 12.6 / 10.6
-            c2=14.6,        # 20.7 / 14.7
+            c1=5.0,         # 12.6 / 10.8
+            c2=14.0,        # 20.7 / 14.6
             c3=46.0,        # 26.0 / 46.0
-            c4=5.0,         # 45.0 / 45.0
-            w1=-0.29,       # -0.20 / -0.30
-            w2=1.39,        # 2.18 / 1.34
-            w3=-0.90,       # -1.95 / -0.82
-            w4=-0.025,      # 0.29 / 0.0
+            c4=5.0,         # 45.0 / 5.0
+            w1=-0.06,       # -0.20 / -0.29
+            w2=1.39,        # 2.18 / 1.39
+            w3=-0.90,       # -1.95 / -0.90
+            w4=0,      # 0.29 / -0.025
             a0=0.0,         # -0.17
-            MLT0=21.4
+            MLT0=21.4,
+            rho_cs0=0.0,
+            c11=5.0,
+            c12=30.0,
+            c13=50.0,
+            w11=0.0,
+            w12=0.0,
+            w13=0.0,
     ):
         """
         Args:
-            I_rho (float): Radial current intensity [MA]
-            I_phi (float): Azimuthal current surface density [MA m-1]
+            I_rho0 (float): Radial current intensity [MA]
+            i_phi0 (float): Azimuthal current surface density [MA m-1]
             D (float): Half thickness of the current sheet [RJ]
             theta_d_deg (float): Tilt angle of current sheet normal [deg]
             phi_d_deg (float): Azimuthal angle of the tilt of
@@ -65,9 +72,10 @@ class CSField():
             w4 (float): Weight of the Hankel kernel
             a0 (float): Amplitude of the MLT periodocity
             MLT0 (float): Phase MLT [hr]
+            rho_cs0 (float): Subcorotation boundary distance [RJ]
         """
-        self.I_rho = I_rho*1E+6          # Radial current inteisity [A]
-        self.I_phi = I_phi*(1E+6)        # Azimuthal current density [A m-1]
+        self.I_rho0 = I_rho0*(1E+6)      # Total radial current [A]
+        self.i_phi0 = i_phi0*(1E+6)      # Azimuthal current density [A m-1]
         self.D = D                       # Current sheet half thickness [RJ]
         self.theta_d_deg = theta_d_deg   # [deg]
         self.phi_d_deg = phi_d_deg       # [deg]
@@ -81,6 +89,13 @@ class CSField():
         self.w4 = w4                     # Weight of the Hankel kernel
         self.a0 = a0                     # Amplitude of the MLT periodocity
         self.MLT0 = MLT0                 # Phase MLT [hr]
+        self.rho_cs0 = rho_cs0           # Subcorotation boundary distance [RJ]
+        self.c11 = c11
+        self.c12 = c12
+        self.c13 = c13
+        self.w11 = w11
+        self.w12 = w12
+        self.w13 = w13
 
     def _sys3_2_cs(
             self,
@@ -113,12 +128,12 @@ class CSField():
         return x_cs, y_cs, z_cs, rho_cs, phi_cs
 
     def _cs_2_sys3(
-        self,
-        B_rho_cs,
-        B_phi_cs,
-        B_z_cs,
-        rho_cs,
-        phi_cs,
+            self,
+            B_rho_cs,
+            B_phi_cs,
+            B_z_cs,
+            rho_cs,
+            phi_cs,
     ):
         theta_d = math.radians(self.theta_d_deg)
         phi_d = math.radians(self.phi_d_deg)
@@ -161,16 +176,25 @@ class CSField():
         Returns:
             tuple: B1 vector (B_rho, B_phi, B_Z) [T]
         """
-        c1 = self.c1        # [RJ]
-        c2 = self.c2        # [RJ]
-        c3 = self.c3        # [RJ]
-        w1 = self.w1        # [RJ]
-        w2 = self.w2        # [RJ]
-        w3 = self.w3        # [RJ]
-        D = self.D          # Half thickness of the current sheet [RJ]
-        I_rho = self.I_rho  # Radial current density [A]
-        I_phi = self.I_phi*(1+self.a0*math.cos(np.pi*(MLT-self.MLT0)/12.0))
+        c1 = self.c1            # [RJ]
+        c2 = self.c2            # [RJ]
+        c3 = self.c3            # [RJ]
+        w1 = self.w1            # [RJ]
+        w2 = self.w2            # [RJ]
+        w3 = self.w3            # [RJ]
+        D = self.D              # Half thickness of the current sheet [RJ]
+        rho_cs0 = self.rho_cs0  # Subcorotation boundary distance [RJ]
+        I_rho = self.I_rho0     # Radial current density [A]
+        i_phi = self.i_phi0*(1+self.a0*math.cos(np.pi*(MLT-self.MLT0)/12.0))
         # Azimuthal current density [A m-1]
+
+        # For radial current density profile
+        c11 = self.c11           # [RJ]
+        c12 = self.c12           # [RJ]
+        c13 = self.c13           # [RJ]
+        w11 = self.w11           # [RJ]
+        w12 = self.w12           # [RJ]
+        w13 = self.w13           # [RJ]
 
         x_cs, y_cs, z_cs, rho_cs, phi_cs = self._sys3_2_cs(
             x,
@@ -183,7 +207,9 @@ class CSField():
         sgn = np.sign(z_cs)
         # print('sgn:', sgn)
         if abs(z_cs) <= D:
-            # print('abs(z_cs) <= D')
+            # ==========================================
+            # B_rho and B_Z
+            # ==========================================
             u_c11 = c1+z_cs+D
             u_c12 = c1-z_cs+D
             u_c21 = c2+z_cs+D
@@ -199,7 +225,7 @@ class CSField():
             f32 = -u_c32/math.sqrt(rho_cs**2+u_c32**2)
 
             B_rho = w1*(f11+f12)+w2*(f21+f22)+w3*(f31+f32)
-            B_rho *= MU0*I_phi/(4*rho_cs*D)       # [T]
+            B_rho *= MU0*i_phi/(4*rho_cs*D)       # [T]
 
             g11 = 2/math.sqrt(rho_cs**2+c1**2)
             g12 = -1/math.sqrt(rho_cs**2+u_c11**2)
@@ -212,12 +238,27 @@ class CSField():
             g33 = -1/math.sqrt(rho_cs**2+u_c32**2)
 
             B_Z = w1*(g11+g12+g13)+w2*(g21+g22+g23)+w3*(g31+g32+g33)
-            B_Z *= MU0*I_phi/(4*D)                # [T]
+            B_Z *= MU0*i_phi/(4*D)                # [T]
 
-            B_phi = -((MU0*I_rho)/(2*np.pi*rho_cs*RJ))*(z_cs/D)  # [T]
+            # ==========================================
+            # B_phi
+            # ==========================================
+            # B_phi = -((MU0*I_rho)/(2*np.pi*rho_cs*RJ))*(z_cs/D)  # [T]
+            B_phi = rho_cs/(rho_cs**2+rho_cs0**2)
+            B_phi *= -((MU0*I_rho)/(2*np.pi*RJ))*(z_cs/D)   # [T]
+
+            if w11 != 0.0:
+                h11 = 1-np.exp(-rho_cs/c11)
+                h12 = 1-np.exp(-rho_cs/c12)
+                h13 = 1-np.exp(-rho_cs/c13)
+                B_phi = w11*h11+w12*h12+w13*h13
+                B_phi *= -((MU0*I_rho)/(2*np.pi*RJ))*(z_cs/D)  # [T]
+                # ↑ 分母に\rho_cs が抜けてる？
 
         elif abs(z_cs) > D:
-            # print('abs(z_cs) > D')
+            # ==========================================
+            # B_rho and B_Z
+            # ==========================================
             v_c11 = c1+abs(z_cs)+D
             v_c12 = c1+abs(z_cs)-D
             v_c21 = c2+abs(z_cs)+D
@@ -233,7 +274,7 @@ class CSField():
             f32 = -v_c32/math.sqrt(rho_cs**2+v_c32**2)
 
             B_rho = w1*(f11+f12)+w2*(f21+f22)+w3*(f31+f32)
-            B_rho *= sgn*(MU0*I_phi/(4*rho_cs*D))  # [T]
+            B_rho *= sgn*(MU0*i_phi/(4*rho_cs*D))  # [T]
 
             g11 = 1/math.sqrt(rho_cs**2+v_c12**2)
             g12 = -1/math.sqrt(rho_cs**2+v_c11**2)
@@ -243,9 +284,21 @@ class CSField():
             g32 = -1/math.sqrt(rho_cs**2+v_c31**2)
 
             B_Z = w1*(g11+g12)+w2*(g21+g22)+w3*(g31+g32)
-            B_Z *= MU0*I_phi/(4*D)  # [T]
+            B_Z *= MU0*i_phi/(4*D)  # [T]
 
-            B_phi = -sgn*((MU0*I_rho)/(2*np.pi*rho_cs*RJ))  # [T]
+            # ==========================================
+            # B_phi
+            # ==========================================
+            # B_phi = -sgn*((MU0*I_rho)/(2*np.pi*rho_cs*RJ))  # [T]
+            B_phi = rho_cs/(rho_cs**2+rho_cs0**2)
+            B_phi *= -sgn*((MU0*I_rho)/(2*np.pi*RJ))    # [T]
+
+            if w11 != 0.0:
+                h11 = 1-np.exp(-rho_cs/c11)
+                h12 = 1-np.exp(-rho_cs/c12)
+                h13 = 1-np.exp(-rho_cs/c13)
+                B_phi = w11*h11+w12*h12+w13*h13
+                B_phi *= -sgn*((MU0*I_rho)/(2*np.pi*RJ))  # [T]
 
         # B_norm = math.sqrt(B_rho**2+B_phi**2+B_Z**2)
         # print('B_norm [nT]:', B_norm*1E+9)
@@ -343,7 +396,7 @@ class CSField():
             MLT (float): Magnetic local time [hr]
             output_coords (str): 'cartesian', 'cylindrical', or 'spherical'
 
-        return: [A m-1]
+        return: Magnetic field vector [T]
         """
         B_x, B_y, B_z = self._B_vector_cylindrical(x, y, z, MLT)
 
@@ -353,11 +406,32 @@ class CSField():
             output_coords
         )
 
-    def I_phi_profile(
-        self,
-        MLT,
-        rho_cs,
-        each_term=False,
+    def I_rho_profile(
+            self,
+            rho_cs,
+            each_term=False,
+    ):
+        """
+        Args:
+            rho_cs (float): [RJ]
+
+        return: Total current I_rho [A]
+        """
+        I_rho = self.I_rho0*(rho_cs**2/(rho_cs**2+self.rho_cs0**2))
+        f11 = (rho_cs)/(((rho_cs)**2+(self.c11)**2)**(1.5))
+        f12 = (rho_cs)/(((rho_cs)**2+(self.c12)**2)**(1.5))
+        f13 = (rho_cs)/(((rho_cs)**2+(self.c13)**2)**(1.5))
+        if each_term:
+            self.f11 = f11
+            self.f12 = f12
+            self.f13 = f13
+        return I_rho
+
+    def i_phi_profile(
+            self,
+            MLT,
+            rho_cs,
+            each_term=False,
     ):
         """
         Args:
@@ -365,14 +439,14 @@ class CSField():
             rho_cs (float): [RJ]
             each_term (bool): True for plot of each term (w_i*c_i)
 
-        return: [A m-1]
+        return: Surface current density i_phi [A m-1]
         """
-        f1 = self.I_phi*(rho_cs)/(((rho_cs)**2+(self.c1)**2)**(1.5))
-        f2 = self.I_phi*(rho_cs)/(((rho_cs)**2+(self.c2)**2)**(1.5))
-        f3 = self.I_phi*(rho_cs)/(((rho_cs)**2+(self.c3)**2)**(1.5))
+        f1 = self.i_phi0*(rho_cs)/(((rho_cs)**2+(self.c1)**2)**(1.5))
+        f2 = self.i_phi0*(rho_cs)/(((rho_cs)**2+(self.c2)**2)**(1.5))
+        f3 = self.i_phi0*(rho_cs)/(((rho_cs)**2+(self.c3)**2)**(1.5))
         total = self.w1*f1+self.w2*f2+self.w3*f3
         if self.w4 != 0.0:
-            f4 = self.I_phi*(rho_cs)/(((rho_cs)**2+(self.c4)**2)**(1.5))
+            f4 = self.i_phi0*(rho_cs)/(((rho_cs)**2+(self.c4)**2)**(1.5))
             total += self.w4*f4
         if each_term:
             self.f1 = f1
@@ -445,14 +519,14 @@ class CSField():
 
         return A0(MLT)*np.exp(-0.5*((np.log10(R)-A1(MLT))/(A2(MLT)))**2)*np.exp(-0.5*(z/B1(R))**2)
 
-    def I_phi_Wang22(self, rho_cs, MLT):
+    def i_phi_Wang22(self, rho_cs, MLT):
         """
         Args:
             rho_cs (float): cylindrical [RJ]
             z (float): cylindrical [RJ]
             MLT (float): [hr]
 
-        return: [MA RJ-2]
+        return: [MA RJ-1]
         """
         R = rho_cs
 
@@ -507,7 +581,7 @@ class CSField():
 
         return A0(MLT)*np.exp(-0.5*((np.log10(R)-A1(MLT))/(A2(MLT)))**2)*math.sqrt(2*np.pi)*B1(R)
 
-    def I_phi_Con20(self, rho_cs):
+    def i_phi_Con20(self, rho_cs):
         """
         Args:
             rho_cs (float): cylindrical [RJ]
@@ -515,5 +589,5 @@ class CSField():
         return: [A m-1]
         """
         D_con2020 = 3.6     # [RJ]
-        I_0 = (139.6*1E-9)*(4*D_con2020/MU0)     # [A m-1]
-        return I_0/rho_cs
+        i_0 = (139.6*1E-9)*(4*D_con2020/MU0)     # [A m-1]
+        return i_0/rho_cs
