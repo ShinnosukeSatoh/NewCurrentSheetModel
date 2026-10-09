@@ -101,7 +101,7 @@ def dB_obs(
 # PLOT THE BEST FIT
 # ===========================================================
 def plot_best(
-        time_arr, r_pc,
+        time_arr, r_pc, z_cs,
         dBr, dBtheta, dBphi,
         dBr2, dBtheta2, dBphi2,
 ):
@@ -124,7 +124,7 @@ def plot_best(
     F.fontsize = 19
     F.fontname = 'Liberation Sans Narrow'
 
-    F.set_figparams(nrows=3, figsize=(10.0, 7.5), dpi='XL')
+    F.set_figparams(nrows=4, figsize=(10.0, 10.5), dpi='XL')
     F.hspace = 0.2
     F.initialize()
 
@@ -137,9 +137,9 @@ def plot_best(
                 ticks=xticks,
                 ticklabels=xticklabels,
                 minor_num=None)
-    for i in range(3):
+    for i in range(4):
         F.ax[i].xaxis.set_minor_locator(FixedLocator(r_ticks[:, 1]))
-    for i in range(2):
+    for i in range(3):
         i += 1
         ax_upper = F.ax[i].twiny()
         ax_upper.set_xlim(int(time_arr[0]), int(time_arr[-1])+1)
@@ -165,6 +165,12 @@ def plot_best(
                 ticks=np.linspace(-20, 20, 5),
                 ticklabels=np.linspace(-20, 20, 5, dtype=int),
                 minor_num=4)
+    F.set_yaxis(ax_idx=3,
+                label=r'$z_{\rm cs}$ [$R_{\rm J}$]',
+                min=-30, max=20,
+                ticks=np.linspace(-30, 20, 6),
+                ticklabels=np.linspace(-30, 20, 6, dtype=int),
+                minor_num=5)
     F.ax[0].plot(time_arr, dBr, color='k',
                  linewidth=1.0, label='Observations', zorder=2.0)
     F.ax[0].plot(time_arr, dBr2, color=UC.red,
@@ -177,6 +183,21 @@ def plot_best(
                  linewidth=1.0, label='Observations', zorder=2.0)
     F.ax[2].plot(time_arr, dBphi2, color=UC.red,
                  linewidth=1.9, label='FASTER', zorder=1.0)
+    F.ax[3].plot(time_arr, z_cs, color='k',
+                 linewidth=1.0, label='Juno trajectory', zorder=1.0)
+
+    # z_cs current sheet shade
+    rng = np.random.default_rng(42)
+    noise = rng.random((500, 1200))
+    im = F.ax[3].imshow(
+        noise,
+        extent=[int(time_arr[0]), int(time_arr[-1])+1, -2.5, 2.5],
+        origin="lower",
+        cmap="Blues",
+        alpha=0.20,
+        interpolation="nearest",
+        aspect="auto",
+    )
 
     # Shades near Jupiter (< 5.0 RJ)
     inner_idx = np.where((r_pc < np.min(r_ticks_ref)))[0]
@@ -248,8 +269,8 @@ def calc(
             I_rho0=I_rho0,
             i_phi0=i_phi0,
             D=2.5,
-            c11=1.0, c12=23.571,
-            w11=0.1667, w12=1.5,
+            # c11=1.0, c12=23.571,
+            # w11=0.1667, w12=1.5,
         )
         dBx2_pc[i], dBy2_pc[i], dBz2_pc[i] = csfield.magnetic_field(rx_pc[i],
                                                                     ry_pc[i],
@@ -293,7 +314,7 @@ def calc(
         ))/(3*in_num+3*out_num))
 
     # B_phiのinwardはフィッティングに使わない
-    """RMS = math.sqrt(
+    RMS = math.sqrt(
         (np.sum(
             (dBr[in_30rj:in_5rj]-dBr2_pc[in_30rj:in_5rj])**2 +
             (dBtheta[in_30rj:in_5rj]-dBtheta2_pc[in_30rj:in_5rj])**2
@@ -301,7 +322,7 @@ def calc(
             (dBr[out_5rj:out_30rj]-dBr2_pc[out_5rj:out_30rj])**2 +
             (dBtheta[out_5rj:out_30rj]-dBtheta2_pc[out_5rj:out_30rj])**2 +
             (dBphi[out_5rj:out_30rj]-dBphi2_pc[out_5rj:out_30rj])**2
-        ))/(2*in_num+3*out_num))"""
+        ))/(2*in_num+3*out_num))
 
     # print('RMS [nT]:', RMS)
 
@@ -391,7 +412,9 @@ def main():
         dBy2*cos_theta*sin_phi - dBz2*sin_theta
     dBphi2 = -dBx2*sin_phi + dBy2*cos_phi
 
-    plot_best(time_arr, r_pc, dBr,
+    _, _, z_cs, _, _ = csfield._sys3_2_cs(rx_pc, ry_pc, rz_pc)
+
+    plot_best(time_arr, r_pc, z_cs, dBr,
               dBtheta, dBphi, dBr2, dBtheta2, dBphi2)
 
     return np.array([PJ_num, best_a, best_b, min_rms])
@@ -404,33 +427,41 @@ if __name__ == '__main__':
                16, 17, 18, 19, 20,
                21, 22, 23, 24, 25,
                26, 27, 28, 29, 30,
-               32, 33, 34, 35,
+               31, 32, 33, 34, 35,
                36, 37, 38, 39, 40,
                41, 42, 43, 44, 45,
                46, 48, 49, 50,
                51, 52, 53, 54, 55,
                56, 57, 58, 59, 60,
-               61, 62, 63, 64, 65]
+               61, 62, 63, 64, 65,
+               66, 67, 68]
+    PJ_list = [57, 58]
     parallel = 5
 
-    i_phi0_arr = 5.2E-5*np.linspace(0.7, 1.3, 30)
-    I_rho0_arr = 16.7*np.linspace(0.15, 1.8, 21)
-    # I_rho0_arr = 20.0*np.linspace(0.15, 2.5, 21)
+    i_phi0_arr = 5.2E-5*np.linspace(0.75, 1.3, 30)
+    I_rho0_arr = 16.7*np.linspace(0.15, 2.0, 21)
+    s = 10
+    I_rho0_arr = s*np.sinh(
+        np.linspace(np.arcsinh(-10/s), np.arcsinh(40/s), 27)
+    )
+    I_rho0_arr = np.array([-30, -20,])
     print('i_phi0 [10^-5]:', i_phi0_arr[0]*1E+5, i_phi0_arr[-1]*1E+5)
     print('I_rho0:', I_rho0_arr[0], I_rho0_arr[-1])
 
     save_arr = np.zeros((len(PJ_list), 4))
+    start = time.time()
     for i in range(len(PJ_list)):
         PJ_num = PJ_list[i]
         print('PJ:', PJ_num)
         save_arr[i, :] = main()
+    print('Total time [sec]:', round(time.time()-start, 2))
 
     print(save_arr)
     print('RMS min, average:',
           np.min(save_arr[:, 3]),
           np.average(save_arr[:, 3]))
 
-    fname = 'results/insitu_fit_Bphi/result_'
+    fname = 'results/insitu_fit_Bphi_outonly/result_'
     fname += 'PJ'+str(PJ_list[0]).zfill(2)+'_'
     fname += 'PJ'+str(PJ_list[-1]).zfill(2)
     fname += '.txt'

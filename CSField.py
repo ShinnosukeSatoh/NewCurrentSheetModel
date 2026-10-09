@@ -122,8 +122,8 @@ class CSField():
         pos_cs = R @ pos_sys3
 
         x_cs, y_cs, z_cs = pos_cs[0], pos_cs[1], pos_cs[2]
-        rho_cs = math.sqrt(x_cs**2 + y_cs**2)
-        phi_cs = math.atan2(y_cs, x_cs)
+        rho_cs = np.sqrt(x_cs**2 + y_cs**2)
+        phi_cs = np.arctan2(y_cs, x_cs)
 
         return x_cs, y_cs, z_cs, rho_cs, phi_cs
 
@@ -241,11 +241,18 @@ class CSField():
             B_Z *= MU0*i_phi/(4*D)                # [T]
 
             # ==========================================
-            # B_phi
+            # B_phi (Con2020)
             # ==========================================
-            # B_phi = -((MU0*I_rho)/(2*np.pi*rho_cs*RJ))*(z_cs/D)  # [T]
-            B_phi = rho_cs/(rho_cs**2+rho_cs0**2)
-            B_phi *= -((MU0*I_rho)/(2*np.pi*RJ))*(z_cs/D)   # [T]
+            B_phi = -((MU0*I_rho)/(2*np.pi*rho_cs*RJ))*(z_cs/D)  # [T]
+
+            # ==========================================
+            # B_phi (Provan+ 2024)
+            # ==========================================
+            # a = (I_rho*1E-6)/1E+9                    # [T]
+            # b = 3.64*math.sin(2*np.pi*(MLT)/24.0)*1E-9    # [T]
+            # I_rho_provan = -(2*np.pi*RJ/MU0)*(a+b*rho_cs)
+            # B_phi = -I_rho_provan*(MU0/(2*np.pi*rho_cs*RJ))*(z_cs/D)  # [T]
+            # B_phi += b
 
             if w11 != 0.0:
                 h11 = 1-np.exp(-rho_cs/c11)
@@ -253,7 +260,6 @@ class CSField():
                 h13 = 1-np.exp(-rho_cs/c13)
                 B_phi = w11*h11+w12*h12+w13*h13
                 B_phi *= -((MU0*I_rho)/(2*np.pi*rho_cs*RJ))*(z_cs/D)  # [T]
-                # ↑ 分母に\rho_cs が抜けてる？
 
         elif abs(z_cs) > D:
             # ==========================================
@@ -289,9 +295,16 @@ class CSField():
             # ==========================================
             # B_phi
             # ==========================================
-            # B_phi = -sgn*((MU0*I_rho)/(2*np.pi*rho_cs*RJ))  # [T]
-            B_phi = rho_cs/(rho_cs**2+rho_cs0**2)
-            B_phi *= -sgn*((MU0*I_rho)/(2*np.pi*RJ))    # [T]
+            B_phi = -sgn*((MU0*I_rho)/(2*np.pi*rho_cs*RJ))  # [T]
+
+            # ==========================================
+            # B_phi (Provan+ 2024)
+            # ==========================================
+            # a = (I_rho*1E-6)/1E+9                    # [T]
+            # b = 3.64*math.sin(2*np.pi*(MLT)/24.0)*1E-9    # [T]
+            # I_rho_provan = sgn*(2*np.pi*RJ/MU0)*(a+b*rho_cs)
+            # B_phi = -sgn*I_rho_provan*(MU0/(2*np.pi*rho_cs*RJ))  # [T]
+            # B_phi += b
 
             if w11 != 0.0:
                 h11 = 1-np.exp(-rho_cs/c11)
@@ -299,12 +312,6 @@ class CSField():
                 h13 = 1-np.exp(-rho_cs/c13)
                 B_phi = w11*h11+w12*h12+w13*h13
                 B_phi *= -sgn*((MU0*I_rho)/(2*np.pi*rho_cs*RJ))  # [T]
-
-        # B_norm = math.sqrt(B_rho**2+B_phi**2+B_Z**2)
-        # print('B_norm [nT]:', B_norm*1E+9)
-        # print('B_rho [nT]:', B_rho*1E+9)
-        # print('B_phi [nT]:', B_phi*1E+9)
-        # print('B_Z [nT]:', B_Z*1E+9)
 
         B_x, B_y, B_z = self._cs_2_sys3(
             B_rho,
