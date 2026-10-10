@@ -245,7 +245,7 @@ def plot_best(
                       handletextpad=0.4)
     legend_shadow(legend=legend, fig=F.fig, ax=F.ax[0], d=0.7)
 
-    plt.savefig('img/insitu_fit/PJ'+str(PJ_num).zfill(2)+'.png',
+    plt.savefig('img/insitu_fit_b1/PJ'+str(PJ_num).zfill(2)+'.png',
                 bbox_inches='tight')
 
     F.close()
@@ -266,7 +266,7 @@ def calc(
     # ===========================================================
     # CONFIGURE CSFIELD
     # ===========================================================
-    i_phi0, I_rho0 = params
+    i_phi0, I_rho0, b1 = params
     csfield = CSField()
 
     dBx2_pc = np.zeros(n_time_arr)
@@ -277,8 +277,7 @@ def calc(
             I_rho0=I_rho0,
             i_phi0=i_phi0,
             D=2.5,
-            # c11=1.0, c12=23.571,
-            # w11=0.1667, w12=1.5,
+            b1=b1,
         )
         dBx2_pc[i], dBy2_pc[i], dBz2_pc[i] = csfield.magnetic_field(rx_pc[i],
                                                                     ry_pc[i],
@@ -359,12 +358,13 @@ def main():
     )
 
     # Create arg mesh
-    a0_mesh, a1_mesh = np.meshgrid(i_phi0_arr, I_rho0_arr)
-    # -> shape is like (a1.size, a0.size, a2.size)
+    a0_mesh, a1_mesh, a2_mesh = np.meshgrid(i_phi0_arr, I_rho0_arr, b1_arr)
+    # -> shape is like (a1.size, a0.size, a2.size, a3.size)
 
     args = list(zip(
         a0_mesh.ravel(),
         a1_mesh.ravel(),
+        a2_mesh.ravel()
     ))
 
     # 観測データを固定した関数を作成
@@ -392,10 +392,10 @@ def main():
 
     # 最小 RMS とそのインデックスを抽出
     min_idx = np.argmin(results)
-    best_a, best_b = args[min_idx]
+    best_a, best_b, best_c = args[min_idx]
     min_rms = results[min_idx]
 
-    print('Best fit:', best_a, best_b)
+    print('Best fit:', best_a, best_b, best_c)
     print(f'RMS: {min_rms:.4f}')
 
     csfield = CSField()
@@ -403,6 +403,7 @@ def main():
         I_rho0=best_b,
         i_phi0=best_a,
         D=2.5,
+        b1=best_c,
     )
 
     dBx2 = np.zeros(time_arr.size)
@@ -426,6 +427,9 @@ def main():
     plot_best(time_arr, r_pc, rho_cs, z_cs, dBr,
               dBtheta, dBphi, dBr2, dBtheta2, dBphi2)
 
+    del rx_pc, ry_pc, rz_pc, time_arr, Bx_pc, By_pc, Bz_pc, JunoMLT
+    del r_pc, cos_theta, sin_theta, cos_phi, sin_phi
+
     return np.array([PJ_num, best_a, best_b, min_rms])
 
 
@@ -446,12 +450,13 @@ if __name__ == '__main__':
                66, 67, 68, 69, 70]
     parallel = 6
 
-    i_phi0_arr = 5.2E-5*np.linspace(0.75, 1.3, 39)
+    i_phi0_arr = 5.2E-5*np.linspace(0.75, 1.3, 22)
     I_rho0_arr = 16.7*np.linspace(0.15, 2.0, 21)
     s = 13
     I_rho0_arr = s*np.sinh(
-        np.linspace(np.arcsinh(-18/s), np.arcsinh(40/s), 38)
+        np.linspace(np.arcsinh(-20/s), np.arcsinh(40/s), 20)
     )
+    b1_arr = np.linspace(-4.0, 4.0, 9)
     print('i_phi0 [10^-5]:', i_phi0_arr[0]*1E+5, i_phi0_arr[-1]*1E+5)
     print('I_rho0:', I_rho0_arr[0], I_rho0_arr[-1])
 
@@ -468,7 +473,7 @@ if __name__ == '__main__':
           np.min(save_arr[:, 3]),
           np.average(save_arr[:, 3]))
 
-    fname = 'results/insitu_fit/result_'
+    fname = 'results/insitu_fit_b1/result_'
     fname += 'PJ'+str(PJ_list[0]).zfill(2)+'_'
     fname += 'PJ'+str(PJ_list[-1]).zfill(2)
     fname += '.txt'
