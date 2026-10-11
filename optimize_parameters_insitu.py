@@ -262,7 +262,9 @@ def calc(
         n_time_arr,
         rx_pc, ry_pc, rz_pc, r_pc,
         cos_theta, sin_theta, cos_phi, sin_phi,
-        dBr, dBtheta, dBphi, MLT, PJ_num):
+        dBx, dBy, dBz,
+        dBr, dBtheta, dBphi,
+        MLT, PJ_num):
     # ===========================================================
     # CONFIGURE CSFIELD
     # ===========================================================
@@ -284,7 +286,7 @@ def calc(
                                                                     ry_pc[i],
                                                                     rz_pc[i],
                                                                     MLT[i])  # [T]
-    _, _, _, rho_cs, _ = csfield._sys3_2_cs(rx_pc, ry_pc, rz_pc)
+
     dBx2_pc *= 1E+9    # [nT]
     dBy2_pc *= 1E+9    # [nT]
     dBz2_pc *= 1E+9    # [nT]
@@ -297,6 +299,9 @@ def calc(
     # ===========================================================
     # RMSE（Root Mean Squared Error）
     # ===========================================================
+    x_cs, y_cs, _ = csfield._sys3_2_cs(rx_pc, ry_pc, rz_pc)
+    phi_cs = np.arctan2(y_cs, x_cs)
+    rho_cs = np.sqrt(x_cs**2 + y_cs**2)
     in_30rj = np.where(r_pc < 30.0)[0][0]
     if PJ_num in [17]:
         in_5rj = np.where(rho_cs < 8.0)[0][0]
@@ -310,32 +315,56 @@ def calc(
         out_5rj = np.where(rho_cs < 5.0)[0][-1]
     out_num = out_30rj-out_5rj-1
 
-    # B_phiもフルで使う
-    RMS = math.sqrt(
-        (np.sum(
-            (dBr[in_30rj:in_5rj]-dBr2_pc[in_30rj:in_5rj])**2 +
-            (dBtheta[in_30rj:in_5rj]-dBtheta2_pc[in_30rj:in_5rj])**2 +
-            (dBphi[in_30rj:in_5rj]-dBphi2_pc[in_30rj:in_5rj])**2
-        ) + np.sum(
-            (dBr[out_5rj:out_30rj]-dBr2_pc[out_5rj:out_30rj])**2 +
-            (dBtheta[out_5rj:out_30rj]-dBtheta2_pc[out_5rj:out_30rj])**2 +
-            (dBphi[out_5rj:out_30rj]-dBphi2_pc[out_5rj:out_30rj])**2
-        ))/(3*in_num+3*out_num))
+    # ===========================================================
+    # Sys3 (x, y, z) -> CS (rho, phi, z)
+    # ===========================================================
+    dBx_cs, dBy_cs, dBz_cs = csfield._sys3_2_cs(dBx, dBy, dBz)
+    dBrho_cs = dBx_cs*np.cos(phi_cs) + dBy_cs*np.sin(phi_cs)
+    dBphi_cs = -dBx_cs*np.sin(phi_cs) + dBy_cs*np.cos(phi_cs)
 
-    """# B_phiのinwardはフィッティングに使わない
-    RMS = math.sqrt(
-        (np.sum(
-            (dBr[in_30rj:in_5rj]-dBr2_pc[in_30rj:in_5rj])**2 +
-            (dBtheta[in_30rj:in_5rj]-dBtheta2_pc[in_30rj:in_5rj])**2
-        ) + np.sum(
-            (dBr[out_5rj:out_30rj]-dBr2_pc[out_5rj:out_30rj])**2 +
-            (dBtheta[out_5rj:out_30rj]-dBtheta2_pc[out_5rj:out_30rj])**2 +
-            (dBphi[out_5rj:out_30rj]-dBphi2_pc[out_5rj:out_30rj])**2
-        ))/(2*in_num+3*out_num))"""
+    dBx2_cs, dBy2_cs, dBz2_cs = csfield._sys3_2_cs(dBx2_pc, dBy2_pc, dBz2_pc)
+    dBrho2_cs = dBx2_cs*np.cos(phi_cs) + dBy2_cs*np.sin(phi_cs)
+    dBphi2_cs = -dBx2_cs*np.sin(phi_cs) + dBy2_cs*np.cos(phi_cs)
 
-    # print('RMS [nT]:', RMS)
+    # ===========================================================
+    # Total RMSE
+    # ===========================================================
+    RMS_total = math.sqrt(
+        (
+            np.sum(
+                (dBr[in_30rj:in_5rj]-dBr2_pc[in_30rj:in_5rj])**2 +
+                (dBtheta[in_30rj:in_5rj]-dBtheta2_pc[in_30rj:in_5rj])**2 +
+                (dBphi[in_30rj:in_5rj]-dBphi2_pc[in_30rj:in_5rj])**2
+            ) + np.sum(
+                (dBr[out_5rj:out_30rj]-dBr2_pc[out_5rj:out_30rj])**2 +
+                (dBtheta[out_5rj:out_30rj]-dBtheta2_pc[out_5rj:out_30rj])**2 +
+                (dBphi[out_5rj:out_30rj]-dBphi2_pc[out_5rj:out_30rj])**2
+            )
+        )/(3*in_num+3*out_num))
 
-    return RMS
+    RMS_poloidal_cs = math.sqrt(
+        (
+            np.sum(
+                (dBrho_cs[in_30rj:in_5rj]-dBrho2_cs[in_30rj:in_5rj])**2 +
+                (dBz_cs[in_30rj:in_5rj]-dBz2_cs[in_30rj:in_5rj])**2
+            ) + np.sum(
+                (dBrho_cs[out_5rj:out_30rj]-dBrho2_cs[out_5rj:out_30rj])**2 +
+                (dBz_cs[out_5rj:out_30rj]-dBz2_cs[out_5rj:out_30rj])**2
+            )
+        )/(2*in_num+2*out_num)
+    )
+
+    RMS_toroidal_cs = math.sqrt(
+        (
+            np.sum(
+                (dBphi_cs[in_30rj:in_5rj]-dBphi2_cs[in_30rj:in_5rj])**2
+            ) + np.sum(
+                (dBphi_cs[out_5rj:out_30rj]-dBphi2_cs[out_5rj:out_30rj])**2
+            )
+        )/(in_num+out_num)
+    )
+
+    return RMS_total, RMS_poloidal_cs, RMS_toroidal_cs
 
 
 def main():
@@ -360,7 +389,7 @@ def main():
 
     # Create arg mesh
     a0_mesh, a1_mesh = np.meshgrid(i_phi0_arr, I_rho0_arr)
-    # -> shape is like (a1.size, a0.size, a2.size)
+    # -> shape is like (a1.size, a0.size, a2.size, a3.size,)
 
     args = list(zip(
         a0_mesh.ravel(),
@@ -379,6 +408,9 @@ def main():
         sin_theta=sin_theta,
         cos_phi=cos_phi,
         sin_phi=sin_phi,
+        dBx=dBx,
+        dBy=dBy,
+        dBz=dBz,
         dBr=dBr,
         dBtheta=dBtheta,
         dBphi=dBphi,
@@ -390,18 +422,51 @@ def main():
         results = pool.map(worker, args)
     print('Time [sec]:', round(time.time()-start, 2))
 
-    # 最小 RMS とそのインデックスを抽出
-    min_idx = np.argmin(results)
-    best_a, best_b = args[min_idx]
-    min_rms = results[min_idx]
+    RMS_all = np.array(results)  # shape: (N, 3)
+    RMS_tot = RMS_all[:, 0]
+    RMS_poloidal_cs = RMS_all[:, 1]
+    RMS_toroidal_cs = RMS_all[:, 2]
 
-    print('Best fit:', best_a, best_b)
+    # 最小RMSとそのインデックスを抽出
+    min_idx = np.argmin(RMS_tot)
+    best_a0, best_a1 = args[min_idx]
+    min_rms = RMS_tot[min_idx]
+
+    # 1次元リストのRMS_totを3次元配列に復元
+    rms_3d = RMS_tot.reshape(a0_mesh.shape)
+    # -> shape is like (a1.size, a0.size, a2.size, a3.size,)
+    min_idx = np.where(rms_3d == np.min(rms_3d))
+    print(min_idx)
+
+    # a0をベストフィットに固定
+    rms_3d = RMS_toroidal_cs.reshape(a0_mesh.shape)
+    rms_a0_fix = rms_3d[:, min_idx[1][0]]
+    a1_idx = np.where(
+        abs(rms_a0_fix-np.min(rms_a0_fix)) < np.min(rms_a0_fix)*0.05
+    )
+    a1_min = I_rho0_arr[a1_idx][0]
+    a1_max = I_rho0_arr[a1_idx][-1]
+
+    # a1をベストフィットに固定
+    rms_3d = RMS_poloidal_cs.reshape(a0_mesh.shape)
+    rms_a1_fix = rms_3d[min_idx[0][0], :]
+    a0_idx = np.where(
+        abs(rms_a1_fix-np.min(rms_a1_fix)) < np.min(rms_a1_fix)*0.05
+    )
+    a0_min = i_phi0_arr[a0_idx][0]
+    a0_max = i_phi0_arr[a0_idx][-1]
+
+    # ===========================================================
+    # BEST FIT MAGNETIC FIELD & PLOT
+    # ===========================================================
+    print('i_phi0 best fit:', a0_min, best_a0, a0_max)
+    print('I_rho0 best fit:', a1_min, best_a1, a1_max)
     print(f'RMS: {min_rms:.4f}')
 
     csfield = CSField()
     csfield.config(
-        I_rho0=best_b,
-        i_phi0=best_a,
+        I_rho0=best_a1,
+        i_phi0=best_a0,
         D=2.5,
     )
 
@@ -421,12 +486,16 @@ def main():
         dBy2*cos_theta*sin_phi - dBz2*sin_theta
     dBphi2 = -dBx2*sin_phi + dBy2*cos_phi
 
-    _, _, z_cs, rho_cs, _ = csfield._sys3_2_cs(rx_pc, ry_pc, rz_pc)
-
+    x_cs, y_cs, z_cs = csfield._sys3_2_cs(rx_pc, ry_pc, rz_pc)
+    rho_cs = np.sqrt(x_cs**2 + y_cs**2)
     plot_best(time_arr, r_pc, rho_cs, z_cs, dBr,
               dBtheta, dBphi, dBr2, dBtheta2, dBphi2)
 
-    return np.array([PJ_num, best_a, best_b, min_rms])
+    # JunoMLT 代表値
+    in_30rj = np.where(r_pc < 30.0)[0][0]
+    in_20rj = np.where(r_pc < 20.0)[0][0]
+    JunoMLT_1 = np.median(JunoMLT[in_30rj:in_20rj])
+    return np.array([PJ_num, best_a0, best_a1, min_rms, JunoMLT_1])
 
 
 if __name__ == '__main__':
@@ -450,12 +519,12 @@ if __name__ == '__main__':
     I_rho0_arr = 16.7*np.linspace(0.15, 2.0, 21)
     s = 13
     I_rho0_arr = s*np.sinh(
-        np.linspace(np.arcsinh(-18/s), np.arcsinh(40/s), 38)
+        np.linspace(np.arcsinh(-18/s), np.arcsinh(45/s), 40)
     )
     print('i_phi0 [10^-5]:', i_phi0_arr[0]*1E+5, i_phi0_arr[-1]*1E+5)
     print('I_rho0:', I_rho0_arr[0], I_rho0_arr[-1])
 
-    save_arr = np.zeros((len(PJ_list), 4))
+    save_arr = np.zeros((len(PJ_list), 5))
     start = time.time()
     for i in range(len(PJ_list)):
         PJ_num = PJ_list[i]

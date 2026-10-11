@@ -125,10 +125,8 @@ class CSField():
         pos_cs = R @ pos_sys3
 
         x_cs, y_cs, z_cs = pos_cs[0], pos_cs[1], pos_cs[2]
-        rho_cs = np.sqrt(x_cs**2 + y_cs**2)
-        phi_cs = np.arctan2(y_cs, x_cs)
 
-        return x_cs, y_cs, z_cs, rho_cs, phi_cs
+        return x_cs, y_cs, z_cs
 
     def _cs_2_sys3(
             self,
@@ -141,9 +139,9 @@ class CSField():
         theta_d = math.radians(self.theta_d_deg)
         phi_d = math.radians(self.phi_d_deg)
 
-        Bx_cs = B_rho_cs * np.cos(phi_cs) - B_phi_cs * np.sin(phi_cs)
-        By_cs = B_rho_cs * np.sin(phi_cs) + B_phi_cs * np.cos(phi_cs)
-        Bz_cs = B_z_cs
+        B_x_cs = B_rho_cs * np.cos(phi_cs) - B_phi_cs * np.sin(phi_cs)
+        B_y_cs = B_rho_cs * np.sin(phi_cs) + B_phi_cs * np.cos(phi_cs)
+        B_z_cs = B_z_cs
 
         RT = np.array([
             [math.cos(theta_d)*math.cos(phi_d),
@@ -157,10 +155,10 @@ class CSField():
              math.cos(theta_d)]
         ])
 
-        B_cs = np.array([Bx_cs, By_cs, Bz_cs])
-        B_sys3 = RT @ B_cs
+        B_cs = np.array([B_x_cs, B_y_cs, B_z_cs])
+        B_s3 = RT @ B_cs
 
-        return B_sys3[0], B_sys3[1], B_sys3[2]
+        return B_s3[0], B_s3[1], B_s3[2]
 
     def _B_vector_cylindrical(
             self,
@@ -199,11 +197,13 @@ class CSField():
         w12 = self.w12           # [RJ]
         w13 = self.w13           # [RJ]
 
-        x_cs, y_cs, z_cs, rho_cs, phi_cs = self._sys3_2_cs(
+        x_cs, y_cs, z_cs = self._sys3_2_cs(
             x,
             y,
             z,
         )
+        rho_cs = np.sqrt(x_cs**2 + y_cs**2)
+        phi_cs = np.arctan2(y_cs, x_cs)
 
         # print('rho_cs, c, d:', rho_cs, c, d)
 
