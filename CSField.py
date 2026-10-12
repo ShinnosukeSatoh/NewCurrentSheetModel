@@ -189,14 +189,6 @@ class CSField():
         i_phi = self.i_phi0*(1+self.a0*math.cos(np.pi*(MLT-self.MLT0)/12.0))
         # Azimuthal current density [A m-1]
 
-        # For radial current density profile
-        c11 = self.c11           # [RJ]
-        c12 = self.c12           # [RJ]
-        c13 = self.c13           # [RJ]
-        w11 = self.w11           # [RJ]
-        w12 = self.w12           # [RJ]
-        w13 = self.w13           # [RJ]
-
         x_cs, y_cs, z_cs = self._sys3_2_cs(
             x,
             y,
@@ -433,14 +425,7 @@ class CSField():
 
         return: Total current I_rho [A]
         """
-        I_rho = self.I_rho0*(rho_cs**2/(rho_cs**2+self.rho_cs0**2))
-        f11 = (rho_cs)/(((rho_cs)**2+(self.c11)**2)**(1.5))
-        f12 = (rho_cs)/(((rho_cs)**2+(self.c12)**2)**(1.5))
-        f13 = (rho_cs)/(((rho_cs)**2+(self.c13)**2)**(1.5))
-        if each_term:
-            self.f11 = f11
-            self.f12 = f12
-            self.f13 = f13
+        I_rho = self.I_rho0*0.5*(1.0+np.tanh((rho_cs-3.3)/1.1))
         return I_rho
 
     def i_phi_profile(

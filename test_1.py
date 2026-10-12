@@ -233,41 +233,26 @@ F.set_xaxis(label=r'$\rho$ [$R_{\rm J}$]',
             minor_num=5)
 F.set_yaxis(ax_idx=0,
             label=r'$I_{\rho}(R)$ [MA]',
-            min=-10.0, max=20.0,
-            ticks=np.linspace(-10, 20, 7),
-            ticklabels=np.linspace(0-10, 20, 7, dtype=int),
+            min=-1.0, max=20.0,
+            ticks=np.linspace(0, 20, 5),
+            ticklabels=np.linspace(0, 20, 5, dtype=int),
             minor_num=5,)
 
 F.ax.plot(rho_cs/RJ,
-          (w11*csfield.f11+w12*csfield.f12+w13*csfield.f13)*(1E+3),
+          I_rho_new*1E-6,
           color=UC.red, linestyle='-',
           linewidth=2.0,
           label=r'New model')
-F.ax.plot(rho_cs/RJ,
-          (w11*csfield.f11)*(1E+3),
+F.ax.plot(rho_cs_con20/RJ,
+          16.7*np.ones(rho_cs_con20.size),
           color='k', linestyle='--',
-          linewidth=1.0,
-          label=r'$w_{11}f_{11}$')
-F.ax.plot(rho_cs/RJ,
-          (w12*csfield.f12)*(1E+3),
-          color='k', linestyle='-.',
-          linewidth=1.0,
-          label=r'$w_{12}f_{12}$')
-F.ax.plot(rho_cs/RJ,
-          (w13*csfield.f13)*(1E+3),
-          color='k', linestyle=(2, (2, 2)),
-          linewidth=1.0,
-          label=r'$w_{13}f_{13}$')
-F.ax.plot(rho_cs/RJ,
-          16.7*np.ones(rho_cs.size),
-          color='k', linestyle='-',
           label=r'Con2020')
 
 F.ax.set_title(r'Current density', weight='bold')
 
 legend = F.legend(ax_idx=0,
                   ncol=2, markerscale=1.0,
-                  loc='upper right',
+                  loc='lower right',
                   handlelength=1.6,
                   textcolor=False,
                   fontsize_scale=0.65,
