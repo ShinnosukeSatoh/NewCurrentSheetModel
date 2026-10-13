@@ -104,6 +104,7 @@ def plot_best(
         time_arr, r_pc, rho_cs, z_cs,
         dBr, dBtheta, dBphi,
         dBr2, dBtheta2, dBphi2,
+        dBphics, dBphics2, JunoMLT,
 ):
     if PJ_num in [17]:
         r_ticks_ref = np.arange(8, 30+1, 1)
@@ -124,7 +125,7 @@ def plot_best(
     F.fontsize = 21
     F.fontname = 'Liberation Sans Narrow'
 
-    F.set_figparams(nrows=5, figsize=(11.0, 14.0), dpi='XL')
+    F.set_figparams(nrows=6, figsize=(11.0, 16.0), dpi='XL')
     F.hspace = 0.2
     F.initialize()
 
@@ -166,12 +167,18 @@ def plot_best(
                 ticklabels=np.linspace(-20, 20, 5, dtype=int),
                 minor_num=4)
     F.set_yaxis(ax_idx=3,
+                label=r'$\delta B_{\varphi_{\rm cs}}$ [nT]',
+                min=-20, max=20,
+                ticks=np.linspace(-20, 20, 5),
+                ticklabels=np.linspace(-20, 20, 5, dtype=int),
+                minor_num=4)
+    F.set_yaxis(ax_idx=4,
                 label=r'$z_{\rm cs}$ [$R_{\rm J}$]',
                 min=-30, max=20,
                 ticks=np.linspace(-30, 20, 6),
                 ticklabels=np.linspace(-30, 20, 6, dtype=int),
                 minor_num=5)
-    F.set_yaxis(ax_idx=4,
+    F.set_yaxis(ax_idx=5,
                 label=r'$\rho_{\rm cs}$ [$R_{\rm J}$]',
                 min=0, max=50,
                 ticks=np.linspace(0, 50, 6),
@@ -189,15 +196,19 @@ def plot_best(
                  linewidth=1.0, label='Observations', zorder=2.0)
     F.ax[2].plot(time_arr, dBphi2, color=UC.red,
                  linewidth=1.9, label='FASTER', zorder=1.0)
-    F.ax[3].plot(time_arr, z_cs, color='k',
+    F.ax[3].plot(time_arr, dBphics, color='k',
+                 linewidth=1.0, label='Observations', zorder=2.0)
+    F.ax[3].plot(time_arr, dBphics2, color=UC.red,
+                 linewidth=1.9, label='FASTER', zorder=1.0)
+    F.ax[4].plot(time_arr, z_cs, color='k',
                  linewidth=1.0, label='Juno trajectory', zorder=1.0)
-    F.ax[4].plot(time_arr, rho_cs, color='k',
+    F.ax[5].plot(time_arr, rho_cs, color='k',
                  linewidth=1.0, label='Juno trajectory', zorder=1.0)
 
     # z_cs current sheet shade
     rng = np.random.default_rng(42)
     noise = rng.random((500, 1200))
-    im = F.ax[3].imshow(
+    im = F.ax[4].imshow(
         noise,
         extent=[int(time_arr[0]), int(time_arr[-1])+1, -2.5, 2.5],
         origin="lower",
@@ -269,7 +280,7 @@ def calc_poloidal(
         dBx, dBy, dBz,
         dBr, dBtheta, dBphi,
         MLT, PJ_num,
-        a0=0.0, MLT0=0.0):
+        a0=0.0, MLT0=0.0, b1=0.0):
     # ===========================================================
     # CONFIGURE CSFIELD
     # ===========================================================
@@ -285,6 +296,7 @@ def calc_poloidal(
             D=2.5,
             a0=a0,
             MLT0=MLT0,
+            b1=b1,
         )
         dBx2_pc[i], dBy2_pc[i], dBz2_pc[i] = csfield.magnetic_field(rx_pc[i],
                                                                     ry_pc[i],
@@ -359,7 +371,7 @@ def calc_toroidal(
         dBx, dBy, dBz,
         dBr, dBtheta, dBphi,
         MLT, PJ_num,
-        a0=0.0, MLT0=0.0):
+        a0=0.0, MLT0=0.0, b1=0.0):
     # ===========================================================
     # CONFIGURE CSFIELD
     # ===========================================================
@@ -375,6 +387,7 @@ def calc_toroidal(
             D=2.5,
             a0=a0,
             MLT0=MLT0,
+            b1=b1,
         )
         dBx2_pc[i], dBy2_pc[i], dBz2_pc[i] = csfield.magnetic_field(rx_pc[i],
                                                                     ry_pc[i],
@@ -478,6 +491,7 @@ def main():
         PJ_num=PJ_num,
         a0=a0,
         MLT0=MLT0,
+        b1=b1_arr,
     )
     with Pool(processes=parallel) as pool:
         results = pool.map(worker, args)
@@ -515,6 +529,8 @@ def main():
         MLT=JunoMLT,
         PJ_num=PJ_num,
         a0=a0,
+        MLT0=MLT0,
+        b1=b1_arr,
     )
     with Pool(processes=parallel) as pool:
         results = pool.map(worker, args)
@@ -542,6 +558,7 @@ def main():
         D=2.5,
         a0=a0,
         MLT0=MLT0,
+        b1=b1_arr,
     )
 
     dBx2 = np.zeros(time_arr.size)
@@ -550,7 +567,8 @@ def main():
     for i in range(time_arr.size):
         dBx2[i], dBy2[i], dBz2[i] = csfield.magnetic_field(rx_pc[i],
                                                            ry_pc[i],
-                                                           rz_pc[i])  # [T]
+                                                           rz_pc[i],
+                                                           JunoMLT[i])  # [T]
     dBx2 *= 1E+9    # [nT]
     dBy2 *= 1E+9    # [nT]
     dBz2 *= 1E+9    # [nT]
@@ -559,11 +577,29 @@ def main():
     dBtheta2 = dBx2*cos_theta*cos_phi + \
         dBy2*cos_theta*sin_phi - dBz2*sin_theta
     dBphi2 = -dBx2*sin_phi + dBy2*cos_phi
+    dB2 = np.sqrt(dBx2**2+dBy2**2+dBz2**2)
 
+    # ===========================================================
+    # Sys3 (x, y, z) -> CS (rho, phi, z)
+    # ===========================================================
     x_cs, y_cs, z_cs = csfield._sys3_2_cs(rx_pc, ry_pc, rz_pc)
+    phi_cs = np.arctan2(y_cs, x_cs)
     rho_cs = np.sqrt(x_cs**2 + y_cs**2)
+    dBx_cs, dBy_cs, dBz_cs = csfield._sys3_2_cs(dBx, dBy, dBz)
+    dBrho_cs = dBx_cs*np.cos(phi_cs) + dBy_cs*np.sin(phi_cs)
+    dBphi_cs = -dBx_cs*np.sin(phi_cs) + dBy_cs*np.cos(phi_cs)
+
+    dBx2_cs, dBy2_cs, dBz2_cs = csfield._sys3_2_cs(dBx2, dBy2, dBz2)
+    dBrho2_cs = dBx2_cs*np.cos(phi_cs) + dBy2_cs*np.sin(phi_cs)
+    dBphi2_cs = -dBx2_cs*np.sin(phi_cs) + dBy2_cs*np.cos(phi_cs)
+    dB2_cs = np.sqrt(dBrho2_cs**2+dBphi2_cs**2+dBz2_cs**2)
+
     plot_best(time_arr, r_pc, rho_cs, z_cs, dBr,
-              dBtheta, dBphi, dBr2, dBtheta2, dBphi2)
+              dBtheta, dBphi, dBr2, dBtheta2, dBphi2,
+              dBphi_cs, dBphi2_cs, JunoMLT)
+    # print(dBphi2_cs[np.where((rho_cs > 5.0) & (rho_cs < 7.0))])
+    # print('dB2    [nT]:', dB2[np.where((rho_cs > 5.0) & (rho_cs < 7.0))])
+    # print('dB2_cs [nT]:', dB2_cs[np.where((rho_cs > 5.0) & (rho_cs < 7.0))])
 
     # ===========================================================
     # RMSE（Root Mean Squared Error）
@@ -623,12 +659,13 @@ if __name__ == '__main__':
 
     a0 = 0.0
     MLT0 = 0.0
+    b1_arr = 0.0    # 3.64 [nT] (Provan+2024)
     i_phi0_arr = 5.2E-5*np.linspace(0.75, 1.3, 40)
-    I_rho0_arr = 16.7*np.linspace(0.15, 2.0, 21)
     s = 16
     I_rho0_arr = s*np.sinh(
         np.linspace(np.arcsinh(-30/s), np.arcsinh(45/s), 46)
     )
+    # I_rho0_arr *= 0.00001
     print('i_phi0 [10^-5]:', i_phi0_arr[0]*1E+5, i_phi0_arr[-1]*1E+5)
     print('I_rho0:', I_rho0_arr[0], I_rho0_arr[-1])
 

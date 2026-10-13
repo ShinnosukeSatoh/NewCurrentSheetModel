@@ -52,7 +52,7 @@ class CSField():
             w11=0.0,
             w12=0.0,
             w13=0.0,
-            b1=0.0,
+            b1=3.64,
     ):
         """
         Args:
@@ -74,7 +74,7 @@ class CSField():
             a0 (float): Amplitude of the MLT periodocity
             MLT0 (float): Phase MLT [hr]
             rho_cs0 (float): Subcorotation boundary distance [RJ]
-            b1 (float): Additional constant B_phi [nT]
+            b1 (float): Additional constant to b_phi [nT]
         """
         self.I_rho0 = I_rho0*(1E+6)      # Total radial current [A]
         self.i_phi0 = i_phi0*(1E+6)      # Azimuthal current density [A m-1]
@@ -98,7 +98,7 @@ class CSField():
         self.w11 = w11
         self.w12 = w12
         self.w13 = w13
-        self.b1 = b1*1E-9                # Additional constant B_phi [T]
+        self.b1 = b1*1E-9                # Additional constant to b_phi [T]
 
     def _sys3_2_cs(
             self,
@@ -197,7 +197,8 @@ class CSField():
         rho_cs = np.sqrt(x_cs**2 + y_cs**2)
         phi_cs = np.arctan2(y_cs, x_cs)
 
-        # print('rho_cs, c, d:', rho_cs, c, d)
+        MLT_rad = 2*np.pi*(MLT)/24.0    # [rad]
+        # print('MLT:', MLT)
 
         sgn = np.sign(z_cs)
         # print('sgn:', sgn)
@@ -235,29 +236,24 @@ class CSField():
             B_Z = w1*(g11+g12+g13)+w2*(g21+g22+g23)+w3*(g31+g32+g33)
             B_Z *= MU0*i_phi/(4*D)                # [T]
 
-            # ==========================================
-            # B_phi (Con2020)
-            # ==========================================
-            # B_phi = -((MU0*I_rho0)/(2*np.pi*rho_cs*RJ))*(z_cs/D)  # [T]
-            # B_phi += self.b1                                     # [T]
-
-            # ==========================================
-            # B_phi (1+tanh) (rho->0)
-            # ==========================================
+            # ============================================
+            # B_phi (1+tanh) (rho->0) (similar to Con2020)
+            # ============================================
             if rho_cs < 15:
-                I_rho = I_rho0*0.5*(1.0+math.tanh((rho_cs-3.3)/1.1))
+                g_rho = 0.5*(1.0+math.tanh((rho_cs-3.3)/1.1))
             else:
-                I_rho = I_rho0
+                g_rho = 1.0
+            I_rho = I_rho0*g_rho
             B_phi = -((MU0*I_rho)/(2*np.pi*rho_cs*RJ))*(z_cs/D)  # [T]
 
-            # ==========================================
-            # B_phi (Provan+ 2024)
-            # ==========================================
-            # a = (I_rho*1E-6)/1E+9                    # [T]
-            # b = 3.64*math.sin(2*np.pi*(MLT)/24.0)*1E-9    # [T]
-            # I_rho_provan = -(2*np.pi*RJ/MU0)*(a+b*rho_cs)
-            # B_phi = -I_rho_provan*(MU0/(2*np.pi*rho_cs*RJ))*(z_cs/D)  # [T]
-            # B_phi += b
+            # ============================================
+            # Adding b_phi (Provan+ 2024)
+            # ============================================
+            b_phi = (3.64*1E-9)*math.sin(MLT_rad)  # [T]
+            b_phi = self.b1*math.sin(MLT_rad)  # [T]
+            B_phi += -(z_cs/D)*b_phi*g_rho
+            # B_phi = 7.0*1E-9    # [T]
+            # print('b_phi:', b_phi*1E+9, MLT)
 
         elif abs(z_cs) > D:
             # ==========================================
@@ -290,29 +286,27 @@ class CSField():
             B_Z = w1*(g11+g12)+w2*(g21+g22)+w3*(g31+g32)
             B_Z *= MU0*i_phi/(4*D)  # [T]
 
-            # ==========================================
-            # B_phi (Con2020)
-            # ==========================================
-            # B_phi = -sgn*((MU0*I_rho0)/(2*np.pi*rho_cs*RJ))  # [T]
-            # B_phi += self.b1                                # [T]
-
-            # ==========================================
-            # B_phi (1+tanh) (rho->0)
-            # ==========================================
+            # ============================================
+            # B_phi (1+tanh) (rho->0) (similar to Con2020)
+            # ============================================
             if rho_cs < 15:
-                I_rho = I_rho0*0.5*(1.0+math.tanh((rho_cs-3.3)/1.1))
+                g_rho = 0.5*(1.0+math.tanh((rho_cs-3.3)/1.1))
             else:
-                I_rho = I_rho0
+                g_rho = 1.0
+            I_rho = I_rho0*g_rho
             B_phi = -sgn*((MU0*I_rho)/(2*np.pi*rho_cs*RJ))  # [T]
 
-            # ==========================================
-            # B_phi (Provan+ 2024)
-            # ==========================================
-            # a = (I_rho*1E-6)/1E+9                    # [T]
-            # b = 3.64*math.sin(2*np.pi*(MLT)/24.0)*1E-9    # [T]
-            # I_rho_provan = sgn*(2*np.pi*RJ/MU0)*(a+b*rho_cs)
-            # B_phi = -sgn*I_rho_provan*(MU0/(2*np.pi*rho_cs*RJ))  # [T]
-            # B_phi += b
+            # ============================================
+            # Adding b_phi (Provan+ 2024)
+            # ============================================
+            b_phi = (3.64*1E-9)*math.sin(MLT_rad)  # [T]
+            b_phi = self.b1*math.sin(MLT_rad)  # [T]
+            B_phi += -sgn*b_phi*g_rho
+            # B_phi = 7.0*1E-9    # [T]
+            # print('b_phi:', b_phi*1E+9, MLT)
+
+        # if self.b1*1E+9 < 0.1:
+        #     print('self.b1*1E+9:', self.b1*1E+9)
 
         B_x, B_y, B_z = self._cs_2_sys3(
             B_rho,
