@@ -107,9 +107,9 @@ def plot_best(
         dBphics, dBphics2, JunoMLT,
 ):
     if PJ_num in [17]:
-        r_ticks_ref = np.arange(8, 30+1, 1)
+        r_ticks_ref = np.arange(8.0, 36.0+1, 1)
     else:
-        r_ticks_ref = np.arange(5, 30+1, 1)
+        r_ticks_ref = np.arange(5.0, 36.0+1, 1)
     r_ticks = np.zeros((r_ticks_ref.size*2, 2))
     for i in range(r_ticks_ref.size):
         r_i = r_ticks_ref[-1]-i
@@ -138,9 +138,9 @@ def plot_best(
                 ticks=xticks,
                 ticklabels=xticklabels,
                 minor_num=None)
-    for i in range(5):
+    for i in range(F.nrows):
         F.ax[i].xaxis.set_minor_locator(FixedLocator(r_ticks[:, 1]))
-    for i in range(4):
+    for i in range(F.nrows-1):
         i += 1
         ax_upper = F.ax[i].twiny()
         ax_upper.set_xlim(int(time_arr[0]), int(time_arr[-1])+1)
@@ -153,13 +153,13 @@ def plot_best(
                 min=-100, max=100,
                 ticks=np.linspace(-100, 100, 5),
                 ticklabels=np.linspace(-100, 100, 5, dtype=int),
-                minor_num=4)
+                minor_num=5)
     F.set_yaxis(ax_idx=1,
                 label=r'$\delta B_{\theta}$ [nT]',
                 min=-150, max=30,
                 ticks=np.linspace(-150, 30, 7),
                 ticklabels=np.linspace(-150, 30, 7, dtype=int),
-                minor_num=4)
+                minor_num=3)
     F.set_yaxis(ax_idx=2,
                 label=r'$\delta B_{\varphi}$ [nT]',
                 min=-20, max=20,
@@ -177,13 +177,13 @@ def plot_best(
                 min=-30, max=20,
                 ticks=np.linspace(-30, 20, 6),
                 ticklabels=np.linspace(-30, 20, 6, dtype=int),
-                minor_num=5)
+                minor_num=4)
     F.set_yaxis(ax_idx=5,
                 label=r'$\rho_{\rm cs}$ [$R_{\rm J}$]',
                 min=0, max=50,
                 ticks=np.linspace(0, 50, 6),
                 ticklabels=np.linspace(0, 50, 6, dtype=int),
-                minor_num=10)
+                minor_num=5)
     F.ax[0].plot(time_arr, dBr, color='k',
                  linewidth=1.0, label='Observations', zorder=2.0)
     F.ax[0].plot(time_arr, dBr2, color=UC.red,
@@ -318,17 +318,15 @@ def calc_poloidal(
     x_cs, y_cs, _ = csfield._sys3_2_cs(rx_pc, ry_pc, rz_pc)
     phi_cs = np.arctan2(y_cs, x_cs)
     rho_cs = np.sqrt(x_cs**2 + y_cs**2)
-    in_30rj = np.where(r_pc < 30.0)[0][0]
+    in_30rj = np.where(r_pc < 36.0)[0][0]
+    out_30rj = np.where(r_pc < 36.0)[0][-1]
     if PJ_num in [17]:
         in_5rj = np.where(rho_cs < 8.0)[0][0]
-    else:
-        in_5rj = np.where(rho_cs < 5.0)[0][0]
-    in_num = in_5rj-in_30rj-1
-    out_30rj = np.where(r_pc < 30.0)[0][-1]
-    if PJ_num in [17]:
         out_5rj = np.where(rho_cs < 8.0)[0][-1]
     else:
+        in_5rj = np.where(rho_cs < 5.0)[0][0]
         out_5rj = np.where(rho_cs < 5.0)[0][-1]
+    in_num = in_5rj-in_30rj-1
     out_num = out_30rj-out_5rj-1
 
     # ===========================================================
@@ -409,17 +407,15 @@ def calc_toroidal(
     x_cs, y_cs, _ = csfield._sys3_2_cs(rx_pc, ry_pc, rz_pc)
     phi_cs = np.arctan2(y_cs, x_cs)
     rho_cs = np.sqrt(x_cs**2 + y_cs**2)
-    in_30rj = np.where(r_pc < 30.0)[0][0]
+    in_30rj = np.where(r_pc < 36.0)[0][0]
+    out_30rj = np.where(r_pc < 36.0)[0][-1]
     if PJ_num in [17]:
         in_5rj = np.where(rho_cs < 8.0)[0][0]
-    else:
-        in_5rj = np.where(rho_cs < 5.0)[0][0]
-    in_num = in_5rj-in_30rj-1
-    out_30rj = np.where(r_pc < 30.0)[0][-1]
-    if PJ_num in [17]:
         out_5rj = np.where(rho_cs < 8.0)[0][-1]
     else:
+        in_5rj = np.where(rho_cs < 5.0)[0][0]
         out_5rj = np.where(rho_cs < 5.0)[0][-1]
+    in_num = in_5rj-in_30rj-1
     out_num = out_30rj-out_5rj-1
 
     # ===========================================================
@@ -604,17 +600,15 @@ def main():
     # ===========================================================
     # RMSE（Root Mean Squared Error）
     # ===========================================================
-    in_30rj = np.where(r_pc < 30.0)[0][0]
+    in_30rj = np.where(r_pc < 36.0)[0][0]
+    out_30rj = np.where(r_pc < 36.0)[0][-1]
     if PJ_num in [17]:
         in_5rj = np.where(rho_cs < 8.0)[0][0]
-    else:
-        in_5rj = np.where(rho_cs < 5.0)[0][0]
-    in_num = in_5rj-in_30rj-1
-    out_30rj = np.where(r_pc < 30.0)[0][-1]
-    if PJ_num in [17]:
         out_5rj = np.where(rho_cs < 8.0)[0][-1]
     else:
+        in_5rj = np.where(rho_cs < 5.0)[0][0]
         out_5rj = np.where(rho_cs < 5.0)[0][-1]
+    in_num = in_5rj-in_30rj-1
     out_num = out_30rj-out_5rj-1
     RMS_total = math.sqrt(
         (
@@ -632,7 +626,7 @@ def main():
     print('Time [sec]:', round(time.time()-start, 2))
 
     # JunoMLT 代表値
-    in_30rj = np.where(r_pc < 30.0)[0][0]
+    in_30rj = np.where(r_pc < 36.0)[0][0]
     in_5rj = np.where(rho_cs < 5.0)[0][0]
     JunoMLT_1 = np.median(JunoMLT[in_30rj:in_5rj])
     return np.array([PJ_num, i_phi0_best, i_phi0_err, I_rho0_best, I_rho0_err, RMS_total, JunoMLT_1])
@@ -654,12 +648,12 @@ if __name__ == '__main__':
                61, 62, 63, 64, 65,
                66, 67, 68, 69, 70,
                71, 72, 73, 74, 75,
-               76, 77, 78, 79]
+               76, 77, 78, 79, 80]
     parallel = 5
 
     a0 = 0.0
     MLT0 = 0.0
-    b1_arr = 0.0    # 3.64 [nT] (Provan+2024)
+    b1_arr = 3.64    # 3.64 [nT] (Provan+2024)
     i_phi0_arr = 5.2E-5*np.linspace(0.75, 1.3, 40)
     s = 16
     I_rho0_arr = s*np.sinh(
@@ -669,7 +663,7 @@ if __name__ == '__main__':
     print('i_phi0 [10^-5]:', i_phi0_arr[0]*1E+5, i_phi0_arr[-1]*1E+5)
     print('I_rho0:', I_rho0_arr[0], I_rho0_arr[-1])
 
-    savedir = 'results/insitu_fit/result_'
+    savedir = 'results/insitu_fit_b1_36rj/result_'
     save_arr = np.zeros((len(PJ_list), 7))
     start = time.time()
     for i in range(len(PJ_list)):
