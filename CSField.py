@@ -45,14 +45,9 @@ class CSField():
             w4=0,           # 0.29 / -0.025
             a0=0.0,         # -0.17
             MLT0=21.4,
-            rho_cs0=0.0,
-            c11=5.0,
-            c12=30.0,
-            c13=50.0,
-            w11=0.0,
-            w12=0.0,
-            w13=0.0,
-            b1=3.64,
+            a1=0.0,
+            MLT1=0.0,
+            b1=4.66,
     ):
         """
         Args:
@@ -71,9 +66,10 @@ class CSField():
             w2 (float): Weight of the Hankel kernel
             w3 (float): Weight of the Hankel kernel
             w4 (float): Weight of the Hankel kernel
-            a0 (float): Amplitude of the MLT periodocity
-            MLT0 (float): Phase MLT [hr]
-            rho_cs0 (float): Subcorotation boundary distance [RJ]
+            a0 (float): Amplitude of the MLT periodocity (i_phi) [MA m-1]
+            MLT0 (float): Phase MLT (i_phi) [hr]
+            a1 (float): Amplitude of the MLT periodocity (I_rho) [MA]
+            MLT1 (float): Phase MLT (I_rho) [hr]
             b1 (float): Additional constant to b_phi [nT]
         """
         self.I_rho0 = I_rho0*(1E+6)      # Total radial current [A]
@@ -89,15 +85,10 @@ class CSField():
         self.w2 = w2                     # Weight of the Hankel kernel
         self.w3 = w3                     # Weight of the Hankel kernel
         self.w4 = w4                     # Weight of the Hankel kernel
-        self.a0 = a0                     # Amplitude of the MLT periodocity
+        self.a0 = a0*(1E+6)              # Amplitude of the MLT periodocity
         self.MLT0 = MLT0                 # Phase MLT [hr]
-        self.rho_cs0 = rho_cs0           # Subcorotation boundary distance [RJ]
-        self.c11 = c11
-        self.c12 = c12
-        self.c13 = c13
-        self.w11 = w11
-        self.w12 = w12
-        self.w13 = w13
+        self.a1 = a1*(1E+6)              # Amplitude of the MLT periodocity
+        self.MLT1 = MLT1                 # Phase MLT [hr]
         self.b1 = b1*1E-9                # Additional constant to b_phi [T]
 
     def _sys3_2_cs(
@@ -184,10 +175,12 @@ class CSField():
         w2 = self.w2            # [RJ]
         w3 = self.w3            # [RJ]
         D = self.D              # Half thickness of the current sheet [RJ]
-        rho_cs0 = self.rho_cs0  # Subcorotation boundary distance [RJ]
-        I_rho0 = self.I_rho0     # Radial current density [A]
-        i_phi = self.i_phi0*(1+self.a0*math.cos(np.pi*(MLT-self.MLT0)/12.0))
+
+        # Radial current density [A]
+        I_rho0 = self.I_rho0+self.a1*math.cos(np.pi*(MLT-self.MLT1)/12.0)
+
         # Azimuthal current density [A m-1]
+        i_phi = self.i_phi0+self.a0*math.cos(np.pi*(MLT-self.MLT0)/12.0)
 
         x_cs, y_cs, z_cs = self._sys3_2_cs(
             x,
@@ -249,11 +242,10 @@ class CSField():
             # ============================================
             # Adding b_phi (Provan+ 2024)
             # ============================================
-            b_phi = (3.64*1E-9)*math.sin(MLT_rad)  # [T]
-            b_phi = self.b1*math.sin(MLT_rad)  # [T]
+            b_phase = math.radians(-8.5)
+            b_phi = (3.64*1E-9)*math.sin(MLT_rad-b_phase)  # [T]
+            # b_phi = self.b1*math.sin(MLT_rad)  # [T]
             B_phi += -(z_cs/D)*b_phi*g_rho
-            # B_phi = 7.0*1E-9    # [T]
-            # print('b_phi:', b_phi*1E+9, MLT)
 
         elif abs(z_cs) > D:
             # ==========================================
@@ -299,14 +291,10 @@ class CSField():
             # ============================================
             # Adding b_phi (Provan+ 2024)
             # ============================================
-            b_phi = (3.64*1E-9)*math.sin(MLT_rad)  # [T]
-            b_phi = self.b1*math.sin(MLT_rad)  # [T]
+            b_phase = math.radians(-8.5)
+            b_phi = (3.64*1E-9)*math.sin(MLT_rad-b_phase)  # [T]
+            # b_phi = self.b1*math.sin(MLT_rad)  # [T]
             B_phi += -sgn*b_phi*g_rho
-            # B_phi = 7.0*1E-9    # [T]
-            # print('b_phi:', b_phi*1E+9, MLT)
-
-        # if self.b1*1E+9 < 0.1:
-        #     print('self.b1*1E+9:', self.b1*1E+9)
 
         B_x, B_y, B_z = self._cs_2_sys3(
             B_rho,

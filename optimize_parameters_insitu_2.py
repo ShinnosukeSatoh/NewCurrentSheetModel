@@ -280,13 +280,12 @@ def calc_poloidal(
         dBx, dBy, dBz,
         dBr, dBtheta, dBphi,
         MLT, PJ_num,
-        a0=0.0, MLT0=0.0, b1=0.0):
+        a0=0.0, MLT0=0.0, a1=0.0, MLT1=0.0, b1=0.0):
     # ===========================================================
     # CONFIGURE CSFIELD
     # ===========================================================
     i_phi0 = params
     csfield = CSField()
-
     dBx2_pc = np.zeros(n_time_arr)
     dBy2_pc = np.zeros(n_time_arr)
     dBz2_pc = np.zeros(n_time_arr)
@@ -296,6 +295,8 @@ def calc_poloidal(
             D=2.5,
             a0=a0,
             MLT0=MLT0,
+            a1=a1,
+            MLT1=MLT1,
             b1=b1,
         )
         dBx2_pc[i], dBy2_pc[i], dBz2_pc[i] = csfield.magnetic_field(rx_pc[i],
@@ -369,7 +370,7 @@ def calc_toroidal(
         dBx, dBy, dBz,
         dBr, dBtheta, dBphi,
         MLT, PJ_num,
-        a0=0.0, MLT0=0.0, b1=0.0):
+        a0=0.0, MLT0=0.0, a1=0.0, MLT1=0.0, b1=0.0):
     # ===========================================================
     # CONFIGURE CSFIELD
     # ===========================================================
@@ -385,6 +386,8 @@ def calc_toroidal(
             D=2.5,
             a0=a0,
             MLT0=MLT0,
+            a1=a1,
+            MLT1=MLT1,
             b1=b1,
         )
         dBx2_pc[i], dBy2_pc[i], dBz2_pc[i] = csfield.magnetic_field(rx_pc[i],
@@ -487,6 +490,8 @@ def main():
         PJ_num=PJ_num,
         a0=a0,
         MLT0=MLT0,
+        a1=a1,
+        MLT1=MLT1,
         b1=b1_arr,
     )
     with Pool(processes=parallel) as pool:
@@ -526,6 +531,8 @@ def main():
         PJ_num=PJ_num,
         a0=a0,
         MLT0=MLT0,
+        a1=a1,
+        MLT1=MLT1,
         b1=b1_arr,
     )
     with Pool(processes=parallel) as pool:
@@ -554,6 +561,8 @@ def main():
         D=2.5,
         a0=a0,
         MLT0=MLT0,
+        a1=a1,
+        MLT1=MLT1,
         b1=b1_arr,
     )
 
@@ -651,19 +660,20 @@ if __name__ == '__main__':
                76, 77, 78, 79, 80]
     parallel = 5
 
-    a0 = 0.0
-    MLT0 = 0.0
-    b1_arr = 3.64    # 3.64 [nT] (Provan+2024)
-    i_phi0_arr = 5.2E-5*np.linspace(0.75, 1.3, 40)
-    s = 16
+    a0 = 3.59746838E-6
+    MLT0 = 1.22795601
+    a1 = -5.15316425
+    MLT1 = -40.94971659
+    b1_arr = 3.64  # 3.64 [nT] (Provan+2024) / 4.66 (Cowley+2025)
+    i_phi0_arr = np.linspace(37.0, 60.0, 70)*1E-6   # 5.2E-5
+    s = 20
     I_rho0_arr = s*np.sinh(
-        np.linspace(np.arcsinh(-30/s), np.arcsinh(45/s), 46)
+        np.linspace(np.arcsinh(-34/s), np.arcsinh(42/s), 86)
     )
-    # I_rho0_arr *= 0.00001
     print('i_phi0 [10^-5]:', i_phi0_arr[0]*1E+5, i_phi0_arr[-1]*1E+5)
     print('I_rho0:', I_rho0_arr[0], I_rho0_arr[-1])
 
-    savedir = 'results/insitu_fit_b1_36rj/result_'
+    savedir = 'results/insitu_fit_a0_a1_b1_36rj/result_'
     save_arr = np.zeros((len(PJ_list), 7))
     start = time.time()
     for i in range(len(PJ_list)):
