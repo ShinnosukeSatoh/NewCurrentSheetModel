@@ -660,15 +660,15 @@ if __name__ == '__main__':
                76, 77, 78, 79, 80]
     parallel = 5
 
-    a0 = 3.59746838E-6
-    MLT0 = 1.22795601
-    a1 = -5.15316425
-    MLT1 = -40.94971659
+    a0 = 3.58195981E-6
+    MLT0 = 1.2411386
+    a1 = -5.12302579
+    MLT1 = -16.93107288
     b1_arr = 3.64  # 3.64 [nT] (Provan+2024) / 4.66 (Cowley+2025)
-    i_phi0_arr = np.linspace(37.0, 60.0, 70)*1E-6   # 5.2E-5
+    i_phi0_arr = np.linspace(37.0, 60.0, 100)*1E-6   # 5.2E-5
     s = 20
     I_rho0_arr = s*np.sinh(
-        np.linspace(np.arcsinh(-34/s), np.arcsinh(42/s), 86)
+        np.linspace(np.arcsinh(-34/s), np.arcsinh(42/s), 102)
     )
     print('i_phi0 [10^-5]:', i_phi0_arr[0]*1E+5, i_phi0_arr[-1]*1E+5)
     print('I_rho0:', I_rho0_arr[0], I_rho0_arr[-1])
