@@ -39,18 +39,17 @@ RJ = 71492.0E+3          # JUPITER RADIUS [m]
 # ===========================================================
 csfield = CSField()
 csfield.config(
-    I_rho0=16.7,
-    i_phi0=5.2E-5,
-    D=2.5,          # 2.5
-    c1=5.0,         # 10.8
-    c2=14.0,        # 14.6
-    c3=46.0,        # 46.0
-    c4=5.0,         # 5.0
-    w1=-0.06,       # -0.29
-    w2=1.39,        # 1.39
-    w3=-0.90,       # -0.90
-    w4=0,           # -0.025
-    rho_cs0=4
+    I_rho0=8.38,
+    i_phi0=4.93E-5,
+    # D=2.5,          # 2.5
+    # c1=5.0,         # 10.8
+    # c2=14.0,        # 14.6
+    # c3=46.0,        # 46.0
+    # c4=5.0,         # 5.0
+    # w1=-0.06,       # -0.29
+    # w2=1.39,        # 1.39
+    # w3=-0.90,       # -0.90
+    # w4=0,           # -0.025
 )
 
 
@@ -282,9 +281,9 @@ print('B_norm (Con2020) [nT]:', math.sqrt(Bx1_c**2+By1_c**2+Bz1_c**2))
 
 
 # ===========================================================
-# B1を計算してみる (動径方向に)
+# B1を計算してみる (赤道面で動径方向に)
 # ===========================================================
-r0_arr = np.linspace(2, 40, 20)*RJ  # Radial discenta [m]
+r0_arr = np.linspace(2, 45, 100)*RJ  # Radial distance [m]
 theta0 = np.radians(89.5)       # Colatitude [rad]
 phi0 = np.radians(360.0-112.0)   # East longitude [rad]
 
@@ -309,90 +308,139 @@ Bphi1_c = -Bx1_c*np.sin(phi0) + By1_c*np.cos(phi0)
 
 
 # ===========================================================
+# B1を計算してみる (z=1RJで動径方向に)
+# ===========================================================
+rho1_arr = np.linspace(2, 45, 100)*RJ  # Cylindrical radial distance [m]
+phi1 = np.radians(360.0-112.0)   # East longitude [rad]
+
+x1 = rho1_arr*np.cos(phi0)
+y1 = rho1_arr*np.sin(phi0)
+z1 = 2.0*RJ*np.ones(rho1_arr.shape)
+
+Bx2 = np.zeros(x1.size)
+By2 = np.zeros(x1.size)
+Bz2 = np.zeros(x1.size)
+Bphi2 = np.zeros(x1.size)
+for i in range(x1.size):
+    Bx2[i], By2[i], Bz2[i] = csfield.magnetic_field(x1[i]/RJ,
+                                                    y1[i]/RJ,
+                                                    z1[i]/RJ,)
+Brho2 = Bx2*np.cos(phi1) + By2*np.sin(phi1)
+Bphi2 = -Bx2*np.sin(phi1) + By2*np.cos(phi1)
+
+Bx2_c, By2_c, Bz2_c = jm.Con2020.Field(x1/RJ, y1/RJ, z1/RJ)  # [nT]
+Brho2_c = Bx2_c*np.cos(phi1) + By2_c*np.sin(phi1)
+Bphi2_c = -Bx2_c*np.sin(phi1) + By2_c*np.cos(phi1)
+
+
+# ===========================================================
 # |B1|の動径分布を描いてみる
 # ===========================================================
 F = ShareXaxis()
 F.fontsize = 21
 F.fontname = 'Liberation Sans Narrow'
 
-F.set_figparams(nrows=1, figsize=(5.5, 4.7), dpi='XL')
+F.set_figparams(nrows=1, figsize=(5.0, 4.5), dpi='XL')
 F.hspace = 0.15
 F.initialize()
+
+F.draw_panel_name(F.ax, ' a ')
 
 xticks = np.arange(5, 45+1, 5)
 xticklabels = np.arange(5, 45+1, 5, dtype=int)
 
-F.set_xaxis(label=r'$\rho$ [$R_{\rm J}$]',
+F.set_xaxis(label=r'$\rho_{\rm cs}$ [$R_{\rm J}$]',
             min=2.0, max=35.0,
             ticks=xticks,
             ticklabels=xticklabels,
             minor_num=5)
 F.set_yaxis(ax_idx=0,
             label=r'[nT]',
-            min=0, max=200.0,
-            ticks=np.linspace(-50, 200, 6),
-            ticklabels=np.linspace(-50, 200.0, 6),
+            min=-50, max=150.0,
+            ticks=np.linspace(-50, 150, 5),
+            ticklabels=np.linspace(-50, 150, 5),
             minor_num=5,)
 
+# FASTER (赤道)
 F.ax.plot(r0_arr/RJ,
           np.sqrt(Bx1**2+By1**2+Bz1**2)*1E+9,
           color=UC.red,
-          linewidth=1.75,
-          label=r'New model $|B|$')
+          linewidth=1.9,)
 F.ax.plot(r0_arr/RJ,
           Brho1*1E+9,
           color=UC.red,
-          linestyle='--',
-          linewidth=1.75,
-          label=r'New model $B_\rho$')
+          linestyle=(5, (5, 5)),
+          linewidth=1.9,)
 F.ax.plot(r0_arr/RJ,
           Bphi1*1E+9,
           color=UC.red,
           linestyle='-.',
-          linewidth=1.75,
-          label=r'New model $B_\varphi$')
+          linewidth=1.9,)
 F.ax.plot(r0_arr/RJ,
           Bz1*1E+9,
           color=UC.red,
           linestyle=(2, (2, 2)),
-          linewidth=1.75,
-          label=r'New model $B_z$')
+          linewidth=1.9,)
+
+# Con2020
 F.ax.plot(r0_arr/RJ,
           np.sqrt(Bx1_c**2+By1_c**2+Bz1_c**2),
           color='k',
-          label=r'Con2020 $|B|$')
+          linewidth=1.75,
+          label=r'$|\delta B|$')
 F.ax.plot(r0_arr/RJ,
           Brho1_c,
           color='k',
-          linestyle='--',
-          label=r'Con2020 $B_\rho$')
+          linestyle=(4, (4, 4)),
+          linewidth=1.75,
+          label=r'$\delta B_{\rho_{\rm cs}}$')
 F.ax.plot(r0_arr/RJ,
           Bphi1_c,
           color='k',
           linestyle='-.',
-          label=r'Con2020 $B_\varphi$')
+          linewidth=1.75,
+          label=r'$\delta B_{\varphi_{\rm cs}}$')
 F.ax.plot(r0_arr/RJ,
           Bz1_c,
           color='k',
           linestyle=(2, (2, 2)),
-          label=r'Con2020 $B_z$')
+          linewidth=1.75,
+          label=r'$\delta B_{z_{\rm cs}}$')
 
 F.ax.fill_between([0, 100], [-200, 0],
                   color=UC.lightgray,
-                  alpha=0.4, zorder=-5)
+                  alpha=0.35, zorder=-5)
 
-F.ax.set_title(r'Magnetic field intensity', weight='bold')
+F.ax.text(0.05, 0.05,
+          'Red: FASTER',
+          color=UC.red,
+          fontsize=F.fontsize*0.8,
+          fontweight='bold',
+          verticalalignment='center',
+          horizontalalignment='left',
+          transform=F.ax.transAxes)
+
+F.ax.text(0.95, 0.05,
+          'Black: Con2020',
+          color='k',
+          fontsize=F.fontsize*0.8,
+          fontweight='bold',
+          verticalalignment='center',
+          horizontalalignment='right',
+          transform=F.ax.transAxes)
+
+F.ax.set_title(r'$z_{\rm cs}=0$ $R_{\rm J}$, Midnight')
 
 legend = F.legend(ax_idx=0,
                   ncol=1, markerscale=1.0,
                   loc='upper right',
-                  handlelength=1.8,
+                  handlelength=2.8,
                   textcolor=False,
                   fontsize_scale=0.65,
                   handletextpad=0.4)
 legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
 
-plt.savefig('B1_norm.png', bbox_inches='tight')
+plt.savefig('B1_norm.pdf', bbox_inches='tight')
 
 
 # ===========================================================
@@ -451,3 +499,113 @@ legend = F.legend(ax_idx=0,
 legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
 
 plt.savefig('J_phi.png', bbox_inches='tight')
+
+
+# ===========================================================
+# |B1|の動径分布を描いてみる・赤道面とz=1RJ
+# ===========================================================
+F = ShareXaxis()
+F.fontsize = 21
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=1, figsize=(5.0, 4.5), dpi='XL')
+F.hspace = 0.15
+F.initialize()
+
+F.draw_panel_name(F.ax, ' b ')
+
+xticks = np.arange(5, 45+1, 5)
+xticklabels = np.arange(5, 45+1, 5, dtype=int)
+
+F.set_xaxis(label=r'$\rho_{\rm cs}$ [$R_{\rm J}$]',
+            min=2.0, max=35.0,
+            ticks=xticks,
+            ticklabels=xticklabels,
+            minor_num=5)
+F.set_yaxis(ax_idx=0,
+            label=r'[nT]',
+            min=-50, max=150.0,
+            ticks=np.linspace(-50, 150, 5),
+            ticklabels=np.linspace(-50, 150, 5),
+            minor_num=5,)
+
+# FASTER (赤道)
+F.ax.plot(rho1_arr/RJ,
+          np.sqrt(Bx2**2+By2**2+Bz2**2)*1E+9,
+          color=UC.red,
+          linewidth=1.9,)
+F.ax.plot(rho1_arr/RJ,
+          Brho2*1E+9,
+          color=UC.red,
+          linestyle=(5, (5, 5)),
+          linewidth=1.9,)
+F.ax.plot(rho1_arr/RJ,
+          Bphi2*1E+9,
+          color=UC.red,
+          linestyle='-.',
+          linewidth=1.9,)
+F.ax.plot(rho1_arr/RJ,
+          Bz2*1E+9,
+          color=UC.red,
+          linestyle=(2, (2, 2)),
+          linewidth=1.9,)
+
+# Con2020
+F.ax.plot(rho1_arr/RJ,
+          np.sqrt(Bx2_c**2+By2_c**2+Bz2_c**2),
+          color='k',
+          linewidth=1.75,
+          label=r'$|\delta B|$')
+F.ax.plot(rho1_arr/RJ,
+          Brho2_c,
+          color='k',
+          linestyle=(4, (4, 4)),
+          linewidth=1.75,
+          label=r'$\delta B_{\rho_{\rm cs}}$')
+F.ax.plot(rho1_arr/RJ,
+          Bphi2_c,
+          color='k',
+          linestyle='-.',
+          linewidth=1.75,
+          label=r'$\delta B_{\varphi_{\rm cs}}$')
+F.ax.plot(rho1_arr/RJ,
+          Bz2_c,
+          color='k',
+          linestyle=(2, (2, 2)),
+          linewidth=1.75,
+          label=r'$\delta B_{z_{\rm cs}}$')
+
+F.ax.fill_between([0, 100], [-200, 0],
+                  color=UC.lightgray,
+                  alpha=0.35, zorder=-5)
+
+F.ax.text(0.05, 0.05,
+          'Red: FASTER',
+          color=UC.red,
+          fontsize=F.fontsize*0.8,
+          fontweight='bold',
+          verticalalignment='center',
+          horizontalalignment='left',
+          transform=F.ax.transAxes)
+
+F.ax.text(0.95, 0.05,
+          'Black: Con2020',
+          color='k',
+          fontsize=F.fontsize*0.8,
+          fontweight='bold',
+          verticalalignment='center',
+          horizontalalignment='right',
+          transform=F.ax.transAxes)
+
+F.ax.set_title(r'$z_{\rm cs}=2.0$ $R_{\rm J}$, Midnight')
+
+legend = F.legend(ax_idx=0,
+                  ncol=1, markerscale=1.0,
+                  loc='upper right',
+                  handlelength=2.8,
+                  textcolor=False,
+                  fontsize_scale=0.65,
+                  handletextpad=0.4)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
+
+plt.savefig('B1_norm_z_1RJ.pdf', bbox_inches='tight')
