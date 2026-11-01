@@ -66,6 +66,8 @@ i_phi_new = csfield.i_phi_profile(
 J_phi_new = (i_phi_new/(2*csfield.D*RJ))*(1E-6)*(RJ**2)  # [MA RJ-2]
 I_rho_new = csfield.I_rho_profile(rho_cs=rho_cs/RJ, each_term=True)
 print('i_phi_0 [MA RJ-1]:', csfield.i_phi0*1E-6*RJ)
+print('i_phi_0 [A m-1]:', csfield.i_phi0)
+print('np.max(i_phi_new):', np.max(i_phi_new))
 print('np.min(J_phi_new):', np.min(J_phi_new))
 
 # Wang+2022
@@ -165,31 +167,31 @@ F.set_xaxis(label=r'$\rho$ [$R_{\rm J}$]',
             ticklabels=xticklabels,
             minor_num=5)
 F.set_yaxis(ax_idx=0,
-            label=r'$i_{\varphi}(R)$ [MA $R_{\rm J}^{-1}$]',
-            min=-10.0, max=20.0,
-            ticks=np.linspace(-10, 20, 7),
-            ticklabels=np.linspace(-10, 20, 7, dtype=int),
+            label=r'$i_{\varphi}(R)$ [A m$^{-1}$]',
+            min=-0.2, max=0.4,
+            ticks=np.linspace(-0.2, 0.4, 7),
+            ticklabels=np.linspace(-2, 4, 7)/10,
             minor_num=5,)
 
 F.ax.plot(rho_cs/RJ,
-          csfield.w1*csfield.f1*(1E-6)*RJ,
+          csfield.w1*csfield.f1,  # *(1E-6)*RJ,
           color='k', linestyle='-',
           label=r'$w_1 f_1$')
 F.ax.plot(rho_cs/RJ,
-          csfield.w2*csfield.f2*(1E-6)*RJ,
+          csfield.w2*csfield.f2,  # *(1E-6)*RJ,
           color='k', linestyle='--',
           label=r'$w_2 f_2$')
 F.ax.plot(rho_cs/RJ,
-          csfield.w3*csfield.f3*(1E-6)*RJ,
+          csfield.w3*csfield.f3,  # *(1E-6)*RJ,
           color='k', linestyle='-.',
           label=r'$w_3 f_3$')
 if csfield.w4 != 0.0:
     F.ax.plot(rho_cs/RJ,
-              csfield.w4*csfield.f4*(1E-6)*RJ,
+              csfield.w4*csfield.f4,  # *(1E-6)*RJ,
               color='k', linestyle=(2, (2, 2)),
               label=r'$w_4 f_4$')
 
-F.ax.plot(rho_cs/RJ, i_phi_new*(1E-6)*RJ,
+F.ax.plot(rho_cs/RJ, i_phi_new,  # *(1E-6)*RJ,
           color=UC.red, linewidth=3.0,
           label='New model (total)')
 F.ax.fill_between([0, 100], [-200, 0],

@@ -240,12 +240,12 @@ class CSField():
             B_phi = -((MU0*I_rho)/(2*np.pi*rho_cs*RJ))*(z_cs/D)  # [T]
 
             # ============================================
-            # Adding b_phi (Provan+ 2024)
+            # Adding b_cross (Provan+ 2024)
             # ============================================
-            b_phase = math.radians(-8.5)
-            b_phi = (3.64*1E-9)*math.sin(MLT_rad-b_phase)  # [T]
-            # b_phi = self.b1*math.sin(MLT_rad)  # [T]
-            B_phi += -(z_cs/D)*b_phi*g_rho
+            b_phs = math.radians(-8.5)
+            b_cross = -(z_cs/D)*3.64E-9                     # [T]
+            B_rho += -b_cross*math.cos(MLT_rad-b_phs)*g_rho  # [T]
+            B_phi += b_cross*math.sin(MLT_rad-b_phs)*g_rho  # [T]
 
         elif abs(z_cs) > D:
             # ==========================================
@@ -289,12 +289,12 @@ class CSField():
             B_phi = -sgn*((MU0*I_rho)/(2*np.pi*rho_cs*RJ))  # [T]
 
             # ============================================
-            # Adding b_phi (Provan+ 2024)
+            # Adding b_cross (Provan+ 2024)
             # ============================================
-            b_phase = math.radians(-8.5)
-            b_phi = (3.64*1E-9)*math.sin(MLT_rad-b_phase)  # [T]
-            # b_phi = self.b1*math.sin(MLT_rad)  # [T]
-            B_phi += -sgn*b_phi*g_rho
+            b_phs = math.radians(-8.5)
+            b_cross = -sgn*3.64E-9                           # [T]
+            B_rho += -b_cross*math.cos(MLT_rad-b_phs)*g_rho   # [T]
+            B_phi += b_cross*math.sin(MLT_rad-b_phs)*g_rho   # [T]
 
         B_x, B_y, B_z = self._cs_2_sys3(
             B_rho,
