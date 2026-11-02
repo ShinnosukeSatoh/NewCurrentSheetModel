@@ -30,8 +30,8 @@ class CSField():
 
     def config(
             self,
-            I_rho0=16.7,
-            i_phi0=5.2E-5,   # / 8.0E-5
+            I_rho0=8.38,
+            i_phi0=4.917E-5,   # / 8.0E-5
             D=2.5,
             theta_d_deg=9.3,
             phi_d_deg=155.8,
@@ -44,10 +44,10 @@ class CSField():
             w3=-0.90,       # -1.95 / -0.90
             w4=0,           # 0.29 / -0.025
             a0=0.0,         # -0.17
-            MLT0=21.4,
+            MLT0=0.0,
             a1=0.0,
             MLT1=0.0,
-            b1=4.66,
+            b1=3.64,
     ):
         """
         Args:
