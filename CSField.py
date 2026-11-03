@@ -243,9 +243,9 @@ class CSField():
             # Adding b_cross (Provan+ 2024)
             # ============================================
             b_phs = math.radians(-8.5)
-            b_cross = -(z_cs/D)*3.64E-9                     # [T]
+            b_cross = -(z_cs/D)*self.b1                      # [T]
             B_rho += -b_cross*math.cos(MLT_rad-b_phs)*g_rho  # [T]
-            B_phi += b_cross*math.sin(MLT_rad-b_phs)*g_rho  # [T]
+            B_phi += b_cross*math.sin(MLT_rad-b_phs)*g_rho   # [T]
 
         elif abs(z_cs) > D:
             # ==========================================
@@ -292,8 +292,8 @@ class CSField():
             # Adding b_cross (Provan+ 2024)
             # ============================================
             b_phs = math.radians(-8.5)
-            b_cross = -sgn*3.64E-9                           # [T]
-            B_rho += -b_cross*math.cos(MLT_rad-b_phs)*g_rho   # [T]
+            b_cross = -sgn*self.b1                           # [T]
+            B_rho += -b_cross*math.cos(MLT_rad-b_phs)*g_rho  # [T]
             B_phi += b_cross*math.sin(MLT_rad-b_phs)*g_rho   # [T]
 
         B_x, B_y, B_z = self._cs_2_sys3(
