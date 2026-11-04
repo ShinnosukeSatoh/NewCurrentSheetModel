@@ -42,14 +42,12 @@ csfield.config(
     I_rho0=8.3795,
     i_phi0=4.91719E-5,
     # D=2.5,          # 2.5
-    # c1=5.0,         # 10.8
-    # c2=14.0,        # 14.6
+    # c1=5.0,         # 5.0
+    # c2=14.0,        # 14.0
     # c3=46.0,        # 46.0
-    # c4=5.0,         # 5.0
-    # w1=-0.06,       # -0.29
-    # w2=1.39,        # 1.39
-    # w3=-0.90,       # -0.90
-    # w4=0,           # -0.025
+    w1=-0.06,       # -0.06
+    w2=1.395,       # 1.39
+    w3=-0.95,       # -0.90
 )
 
 
@@ -310,7 +308,7 @@ Bphi1_c = -Bx1_c*np.sin(phi0) + By1_c*np.cos(phi0)
 
 
 # ===========================================================
-# B1を計算してみる (z=1RJで動径方向に)
+# B1を計算してみる (z=1RJ で動径方向に)
 # ===========================================================
 rho1_arr = np.linspace(2, 45, 100)*RJ  # Cylindrical radial distance [m]
 phi1 = np.radians(360.0-112.0)   # East longitude [rad]
@@ -333,6 +331,35 @@ Bphi2 = -Bx2*np.sin(phi1) + By2*np.cos(phi1)
 Bx2_c, By2_c, Bz2_c = jm.Con2020.Field(x1/RJ, y1/RJ, z1/RJ)  # [nT]
 Brho2_c = Bx2_c*np.cos(phi1) + By2_c*np.sin(phi1)
 Bphi2_c = -Bx2_c*np.sin(phi1) + By2_c*np.cos(phi1)
+
+
+# ===========================================================
+# B1を計算してみる (r=15RJ & z=2RJ でMLT方向に)
+# 磁力線sweep–backの検証
+# ===========================================================
+rho2 = 15.0*RJ  # Cylindrical radial distance [m]
+phi2 = np.radians(360.0-112.0)   # East longitude [rad]
+
+x2 = rho2*np.cos(phi0)
+y2 = rho2*np.sin(phi0)
+z2 = 2.0*RJ
+MLT2 = np.linspace(0.0, 23.99, 50)
+
+Bx3 = np.zeros(MLT2.size)
+By3 = np.zeros(MLT2.size)
+Bz3 = np.zeros(MLT2.size)
+Bphi3 = np.zeros(x2.size)
+for i in range(MLT2.size):
+    Bx3[i], By3[i], Bz3[i] = csfield.magnetic_field(x2/RJ,
+                                                    y2/RJ,
+                                                    z2/RJ,
+                                                    MLT2[i])
+Brho3 = Bx3*np.cos(phi2) + By3*np.sin(phi2)
+Bphi3 = -Bx3*np.sin(phi2) + By3*np.cos(phi2)
+
+Bx3_c, By3_c, Bz3_c = jm.Con2020.Field(x2/RJ, y2/RJ, z2/RJ)  # [nT]
+Brho3_c = Bx3_c*np.cos(phi2) + By3_c*np.sin(phi2)
+Bphi3_c = -Bx3_c*np.sin(phi2) + By3_c*np.cos(phi2)
 
 
 # ===========================================================
@@ -431,7 +458,7 @@ F.ax.text(0.95, 0.05,
           horizontalalignment='right',
           transform=F.ax.transAxes)
 
-F.ax.set_title(r'$z_{\rm cs}=0$ $R_{\rm J}$, Midnight')
+F.ax.set_title(r'$z_{\rm cs}=0$ $R_{\rm J}$ | Midnight')
 
 legend = F.legend(ax_idx=0,
                   ncol=1, markerscale=1.0,
@@ -442,6 +469,7 @@ legend = F.legend(ax_idx=0,
                   handletextpad=0.4)
 legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
 
+plt.savefig('B1_norm.png', bbox_inches='tight')
 plt.savefig('B1_norm.pdf', bbox_inches='tight')
 
 
@@ -599,7 +627,7 @@ F.ax.text(0.95, 0.05,
           horizontalalignment='right',
           transform=F.ax.transAxes)
 
-F.ax.set_title(r'$z_{\rm cs}=2.0$ $R_{\rm J}$, Midnight')
+F.ax.set_title(r'$z_{\rm cs}=2.0$ $R_{\rm J}$ | Midnight')
 
 legend = F.legend(ax_idx=0,
                   ncol=1, markerscale=1.0,
@@ -611,3 +639,53 @@ legend = F.legend(ax_idx=0,
 legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
 
 plt.savefig('B1_norm_z_1RJ.pdf', bbox_inches='tight')
+
+
+# ===========================================================
+# B1_phiのMLT分布を描いてみる
+# ===========================================================
+F = ShareXaxis()
+F.fontsize = 21
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=1, figsize=(5.0, 4.5), dpi='XL')
+F.hspace = 0.15
+F.initialize()
+
+F.draw_panel_name(F.ax, ' c ')
+
+xticks = np.arange(0, 24+1, 3)
+xticklabels = np.arange(0, 24+1, 3, dtype=int)
+
+F.set_xaxis(label=r'MLT [hour]',
+            min=0.0, max=24.0,
+            ticks=xticks,
+            ticklabels=xticklabels,
+            minor_num=3)
+F.set_yaxis(ax_idx=0,
+            label=r'$\delta B_{z_{\rm cs}} / \delta B_{\varphi_{\rm cs}}$',
+            min=-12, max=0.0,
+            ticks=np.linspace(-12, 0, 5),
+            ticklabels=np.linspace(-12, 0, 5),
+            minor_num=3,)
+
+F.ax.plot(MLT2, Bz3/Bphi3, linewidth=2.0, color=UC.red,
+          label='FASTER')
+F.ax.axhline(y=Bz3_c/Bphi3_c, linewidth=2.0, color='k',
+             label='Con2020')
+
+F.ax.set_title(
+    r'$\rho_{\rm cs}=15.0$ $R_{\rm J}$ | $z_{\rm cs}=2.0$ $R_{\rm J}$')
+
+legend = F.legend(ax_idx=0,
+                  ncol=1, markerscale=1.0,
+                  loc='upper right',
+                  handlelength=2.0,
+                  textcolor=False,
+                  fontsize_scale=0.65,
+                  handletextpad=0.4)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
+
+print('Bphi3:', Bphi3*1E+9)
+print('Bz3/Bphi3:', Bz3/Bphi3)
+plt.savefig('B1_sweptback_15rj.pdf', bbox_inches='tight')

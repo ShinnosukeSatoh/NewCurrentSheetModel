@@ -8,6 +8,7 @@ Description:
 
 Version
 0.0.1 (Sep 25, 2026)
+0.1.1 (Nov 4, 2026)  : Shape parameters refined.
 
 """
 import numpy as np
@@ -31,19 +32,19 @@ class CSField():
     def config(
             self,
             I_rho0=8.38,
-            i_phi0=4.917E-5,   # / 8.0E-5
+            i_phi0=4.847E-5,
             D=2.5,
             theta_d_deg=9.3,
             phi_d_deg=155.8,
-            c1=5.0,         # 12.6 / 10.8
-            c2=14.0,        # 20.7 / 14.6
-            c3=46.0,        # 26.0 / 46.0
-            c4=5.0,         # 45.0 / 5.0
-            w1=-0.06,       # -0.20 / -0.29
-            w2=1.39,        # 2.18 / 1.39
-            w3=-0.90,       # -1.95 / -0.90
-            w4=0,           # 0.29 / -0.025
-            a0=0.0,         # -0.17
+            c1=5.0,         # 5.0
+            c2=14.0,        # 14.0
+            c3=46.0,        # 46.0
+            c4=99.0,        #
+            w1=-0.06,       # -0.06
+            w2=1.39,        # 1.39
+            w3=-0.82,       # -0.90
+            w4=0,           #
+            a0=0.0,         #
             MLT0=0.0,
             a1=0.0,
             MLT1=0.0,
@@ -58,10 +59,10 @@ class CSField():
             phi_d_deg (float): Azimuthal angle of the tilt of
                                 the current sheet normal sheet tilt
                                 (right-hand) [deg]
-            c1 (float): c1 < c2 < c3 [RJ]
-            c2 (float): c1 < c2 < c3 [RJ]
-            c3 (float): c1 < c2 < c3 [RJ]
-            c4 (float): [RJ]
+            c1 (float): c1 < c2 < c3 < c4 [RJ]
+            c2 (float): c1 < c2 < c3 < c4 [RJ]
+            c3 (float): c1 < c2 < c3 < c4 [RJ]
+            c4 (float): c1 < c2 < c3 < c4 [RJ]
             w1 (float): Weight of the Hankel kernel
             w2 (float): Weight of the Hankel kernel
             w3 (float): Weight of the Hankel kernel
@@ -77,10 +78,10 @@ class CSField():
         self.D = D                       # Current sheet half thickness [RJ]
         self.theta_d_deg = theta_d_deg   # [deg]
         self.phi_d_deg = phi_d_deg       # [deg]
-        self.c1 = c1                     # c1 < c2 < c3 [RJ]
-        self.c2 = c2                     # c1 < c2 < c3 [RJ]
-        self.c3 = c3                     # c1 < c2 < c3 [RJ]
-        self.c4 = c4                     # [RJ]
+        self.c1 = c1                     # c1 < c2 < c3 < c4 [RJ]
+        self.c2 = c2                     # c1 < c2 < c3 < c4 [RJ]
+        self.c3 = c3                     # c1 < c2 < c3 < c4 [RJ]
+        self.c4 = c4                     # c1 < c2 < c3 < c4 [RJ]
         self.w1 = w1                     # Weight of the Hankel kernel
         self.w2 = w2                     # Weight of the Hankel kernel
         self.w3 = w3                     # Weight of the Hankel kernel
