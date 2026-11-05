@@ -46,7 +46,21 @@ RJ = 71492.0E+3          # JUPITER RADIUS [m]
 # CONFIGURE CSFIELD
 # ===========================================================
 csfield = CSField()
-csfield.config()
+csfield.config(
+    I_rho0=8.3795,
+    i_phi0=4.91719E-5,
+    # D=2.5,          # 2.5
+    # c1=5.0,         # 5.0
+    # c2=14.0,        # 14.0
+    # c3=46.0,        # 46.0
+    w1=-0.06,       # -0.06
+    w2=1.395,       # 1.39
+    w3=-0.95,       # -0.90
+    a0=2.19129985E-6,
+    MLT0=2.46607518,
+    a1=-5.12302579,
+    MLT1=-16.93107288,
+)
 
 
 # ===========================================================
@@ -127,8 +141,8 @@ gfp_ref_pos_S = ref_data_S[:, 7:9]      # (lat, wlon) [deg]
 # EUROPA FOOTPATH REFERENCE
 # ===========================================================
 r0 = 9.4*RJ                      # Radial distance [m]
-theta0 = np.radians(89.9)        # Colatitude [rad]
-phi0 = np.radians(360.0-np.linspace(0.0, 359.9, 120))   # East longitude [rad]
+theta0 = np.radians(89.99)        # Colatitude [rad]
+phi0 = np.radians(360.0-eq_wlon_ref)   # East longitude [rad]
 
 x0 = r0*np.sin(theta0)*np.cos(phi0)
 y0 = r0*np.sin(theta0)*np.sin(phi0)
@@ -139,7 +153,7 @@ Niter = int(70000)
 ds0 = 3000000.0   # [m]
 p = 3.0
 
-# 北半球
+"""# 北半球
 ns = -1     # -1: north; 1: south
 result_arr = np.zeros((phi0.size, 4))
 start = time.time()
@@ -148,7 +162,8 @@ for j in range(x0.size):
     for i in range(Niter):
         # Community codes
         Bx0, By0, Bz0 = jm.Internal.Field(x/RJ, y/RJ, z/RJ)       # [nT]
-        Bx1, By1, Bz1 = csfield.magnetic_field(x/RJ, y/RJ, z/RJ)  # [T]
+        Bx1, By1, Bz1 = csfield.magnetic_field(
+            x/RJ, y/RJ, z/RJ, MLT=6.0)  # [T]
         Bx = (Bx0*1E-9)+Bx1     # [T]
         By = (By0*1E-9)+By1     # [T]
         Bz = (Bz0*1E-9)+Bz1     # [T]
@@ -181,11 +196,6 @@ for j in range(x0.size):
             if abs(alt_gr-1.0)*1000.0 <= 0.5*ds:
                 print('End altitude [km]:', round(alt_gr, 2))
                 break
-    """print(round(360.0-np.degrees(phi0[j]), 2),
-          round(rs/RJ, 2),
-          round(np.mod(np.degrees(0.5*np.pi-theta), 360.0), 2),
-          round(np.mod(np.degrees(2*np.pi-phi), 360.0), 2)
-          )"""
     result_arr[j, :] = np.array([
         round(360.0-np.degrees(phi0[j]), 3),
         round(rs/RJ, 3),
@@ -207,7 +217,8 @@ for j in range(x0.size):
     for i in range(Niter):
         # Community codes
         Bx0, By0, Bz0 = jm.Internal.Field(x/RJ, y/RJ, z/RJ)       # [nT]
-        Bx1, By1, Bz1 = csfield.magnetic_field(x/RJ, y/RJ, z/RJ)  # [T]
+        Bx1, By1, Bz1 = csfield.magnetic_field(
+            x/RJ, y/RJ, z/RJ, MLT=6.0)  # [T]
         Bx = (Bx0*1E-9)+Bx1     # [T]
         By = (By0*1E-9)+By1     # [T]
         Bz = (Bz0*1E-9)+Bz1     # [T]
@@ -240,11 +251,6 @@ for j in range(x0.size):
             if abs(alt_gr-1.0)*1000.0 <= 0.5*ds:
                 print('End altitude [km]:', round(alt_gr, 2))
                 break
-    """print(round(360.0-np.degrees(phi0[j]), 2),
-          round(rs/RJ, 2),
-          round(np.mod(np.degrees(0.5*np.pi-theta), 360.0), 2),
-          round(np.mod(np.degrees(2*np.pi-phi), 360.0), 2)
-          )"""
     result_arr[j, :] = np.array([
         round(360.0-np.degrees(phi0[j]), 3),
         round(rs/RJ, 3),
@@ -254,8 +260,12 @@ for j in range(x0.size):
     )
 
 print('Time [sec]:', time.time()-start)
-np.savetxt('results/FP_EU_SOUTH_FASTER.txt', result_arr)
+np.savetxt('results/FP_EU_SOUTH_FASTER.txt', result_arr)"""
 
+
+# ===========================================================
+# POLAR PLOT NORTH AND SOUTH
+# ===========================================================
 F = ShareXaxis()
 F.fontsize = 19
 F.fontname = 'Liberation Sans Narrow'
@@ -264,9 +274,6 @@ F.set_figparams(nrows=2, figsize=(5.5, 9.5), dpi='XL')
 F.initialize()
 
 F.panelname = [' a. North ', ' b. South ']
-
-xticks = np.arange(0, 360+1, 45)
-xticklabels = np.arange(0, 360+1, 45, dtype=int)
 
 F.set_xaxis(label=r'$X$ [$R_{\rm J}$]',
             min=-0.7, max=0.7,
@@ -373,3 +380,265 @@ for i in range(lat_grid.size):
               edgecolor=(0, 0, 0, 0), )
 
 plt.savefig('img/FP_EU_POLAR_FASTER.png', bbox_inches='tight')
+
+
+# ===========================================================
+# MOON LONGITUDE VS FOOTPRINT LONGITUDE
+# ===========================================================
+F = ShareXaxis()
+F.fontsize = 19
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=2, figsize=(5.0, 6.6), dpi='XL')
+F.initialize()
+
+F.panelname = [' a. North ', ' b. South ']
+
+xticks = np.arange(0, 360+1, 45)
+xticklabels = np.arange(0, 360+1, 45, dtype=int)
+
+F.set_xaxis(label=r'Moon System III longitude [$^\circ$W]',
+            min=0.0, max=360.0,
+            ticks=xticks,
+            ticklabels=xticklabels,
+            minor_num=3)
+F.set_yaxis(ax_idx=0, label='',
+            min=0.0, max=360.0,
+            ticks=xticks,
+            ticklabels=xticklabels,
+            minor_num=3)
+F.set_yaxis(ax_idx=1, label='',
+            min=0.0, max=360.0,
+            ticks=xticks[:-1],
+            ticklabels=xticklabels[:-1],
+            minor_num=3)
+F.fig.supylabel(
+    r'Footprint System III longitude [$^\circ$W]', x=-0.01, fontsize=F.fontsize)
+
+# FASTER footpath at 900 km
+result_arr = np.loadtxt('results/FP_EU_NORTH_FASTER.txt')
+theta_modelfp = np.radians(90.0-result_arr[:, 2])
+phi_modelfp = np.radians(360.0-result_arr[:, 3])
+F.ax[0].plot(result_arr[:, 0], np.degrees(2*np.pi-phi_modelfp),
+             label='FASTER')
+
+# FASTER footpath at 900 km
+result_arr = np.loadtxt('results/FP_EU_SOUTH_FASTER.txt')
+theta_modelfp = np.radians(90.0-result_arr[:, 2])
+phi_modelfp = np.radians(360.0-result_arr[:, 3])
+F.ax[1].plot(result_arr[:, 0], np.degrees(2*np.pi-phi_modelfp))
+
+# Connerney+ 2022 surface reference 0 km
+theta_modelfp = np.radians(90.0-efp_ref_pos_N[:, 0])
+phi_modelfp = np.radians(360.0-efp_ref_pos_N[:, 1])
+F.ax[0].plot(eq_wlon_ref, efp_ref_pos_N[:, 1],
+             c='k', linewidth=1.6, linestyle=(5, (5, 5)), label='Con2020')
+
+# Connerney+ 2022 surface reference 0 km
+theta_modelfp = np.radians(90.0-efp_ref_pos_S[:, 0])
+phi_modelfp = np.radians(360.0-efp_ref_pos_S[:, 1])
+F.ax[1].plot(eq_wlon_ref, efp_ref_pos_S[:, 1],
+             c='k', linewidth=1.6, linestyle=(5, (5, 5)))
+
+F.ax[0].set_title('Europa footpath', weight='bold')
+legend = F.legend(ax_idx=0,
+                  ncol=2, markerscale=1.0,
+                  loc='lower right',
+                  handlelength=1.5,
+                  textcolor=False,
+                  fontsize_scale=0.65,
+                  handletextpad=0.3)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax[0])
+
+plt.savefig('img/FP_EU_LONGITUDE_FASTER.png', bbox_inches='tight')
+
+
+# ===========================================================
+# MOON LONGITUDE VS FOOTPRINT LATITUDE
+# ===========================================================
+F = ShareXaxis()
+F.fontsize = 19
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=2, figsize=(5.0, 6.6), dpi='XL')
+F.initialize()
+
+F.panelname = [' a. North ', ' b. South ']
+
+xticks = np.arange(0, 360+1, 45)
+xticklabels = np.arange(0, 360+1, 45, dtype=int)
+
+F.set_xaxis(label=r'Moon System III longitude [$^\circ$W]',
+            min=0.0, max=360.0,
+            ticks=xticks,
+            ticklabels=xticklabels,
+            minor_num=3)
+F.set_yaxis(ax_idx=0, label='',
+            min=35.0, max=90.0,
+            ticks=np.arange(40, 90+1, 10),
+            ticklabels=np.arange(40, 90+1, 10),
+            minor_num=2)
+F.set_yaxis(ax_idx=1, label='',
+            min=-90.0, max=-35.0,
+            ticks=np.arange(-90, -40+1, 10),
+            ticklabels=np.arange(-90, -40+1, 10),
+            minor_num=2)
+F.fig.supylabel(
+    r'Footprint System III latitude [$^\circ$W]', x=-0.01, fontsize=F.fontsize)
+
+# FASTER footpath at 900 km
+result_arr = np.loadtxt('results/FP_EU_NORTH_FASTER.txt')
+theta_modelfp = np.radians(90.0-result_arr[:, 2])
+phi_modelfp = np.radians(360.0-result_arr[:, 3])
+F.ax[0].plot(result_arr[:, 0], result_arr[:, 2],
+             label='FASTER')
+
+# FASTER footpath at 900 km
+result_arr = np.loadtxt('results/FP_EU_SOUTH_FASTER.txt')
+theta_modelfp = np.radians(90.0-result_arr[:, 2])
+phi_modelfp = np.radians(360.0-result_arr[:, 3])
+F.ax[1].plot(result_arr[:, 0], result_arr[:, 2]-360.0)
+
+# Connerney+ 2022 surface reference 0 km
+theta_modelfp = np.radians(90.0-efp_ref_pos_N[:, 0])
+phi_modelfp = np.radians(360.0-efp_ref_pos_N[:, 1])
+F.ax[0].plot(eq_wlon_ref, efp_ref_pos_N[:, 0],
+             c='k', linewidth=1.6, linestyle=(5, (5, 5)), label='Con2020')
+
+# Connerney+ 2022 surface reference 0 km
+theta_modelfp = np.radians(90.0-efp_ref_pos_S[:, 0])
+phi_modelfp = np.radians(360.0-efp_ref_pos_S[:, 1])
+F.ax[1].plot(eq_wlon_ref, efp_ref_pos_S[:, 0],
+             c='k', linewidth=1.6, linestyle=(5, (5, 5)))
+
+F.ax[0].set_title('Europa footpath', weight='bold')
+legend = F.legend(ax_idx=0,
+                  ncol=2, markerscale=1.0,
+                  loc='lower right',
+                  handlelength=1.5,
+                  textcolor=False,
+                  fontsize_scale=0.65,
+                  handletextpad=0.3)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax[0])
+
+plt.savefig('img/FP_EU_LATITUDE_FASTER.png', bbox_inches='tight')
+
+
+# ===========================================================
+# MOON LONGITUDE VS FOOTPRINT LATITUDE DIFFERENCE
+# ===========================================================
+F = ShareXaxis()
+F.fontsize = 19
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=2, figsize=(5.0, 6.6), dpi='XL')
+F.initialize()
+
+F.panelname = [' a. North ', ' b. South ']
+
+xticks = np.arange(0, 360+1, 45)
+xticklabels = np.arange(0, 360+1, 45, dtype=int)
+
+F.set_xaxis(label=r'Moon System III longitude [$^\circ$W]',
+            min=0.0, max=360.0,
+            ticks=xticks,
+            ticklabels=xticklabels,
+            minor_num=3)
+F.set_yaxis(ax_idx=0, label='',
+            min=-1.2, max=1.2,
+            ticks=np.arange(-1, 1+0.1, 0.5),
+            ticklabels=np.arange(-1, 1+0.1, 0.5),
+            minor_num=5)
+F.set_yaxis(ax_idx=1, label='',
+            min=-1.2, max=1.2,
+            ticks=np.arange(-1, 1+0.1, 0.5),
+            ticklabels=np.arange(-1, 1+0.1, 0.5),
+            minor_num=5)
+F.fig.supylabel(
+    r'Footprint $\Delta$ latitude [$^\circ$W]', x=-0.01, fontsize=F.fontsize)
+
+# FASTER footpath at 900 km
+result_arr = np.loadtxt('results/FP_EU_NORTH_FASTER.txt')
+theta_modelfp = np.radians(90.0-result_arr[:, 2])
+phi_modelfp = np.radians(360.0-result_arr[:, 3])
+F.ax[0].plot(result_arr[:, 0], result_arr[:, 2]-efp_ref_pos_N[:, 0],
+             label='FASTER')
+
+# FASTER footpath at 900 km
+result_arr = np.loadtxt('results/FP_EU_SOUTH_FASTER.txt')
+theta_modelfp = np.radians(90.0-result_arr[:, 2])
+phi_modelfp = np.radians(360.0-result_arr[:, 3])
+F.ax[1].plot(result_arr[:, 0], (result_arr[:, 2]-360.0)-efp_ref_pos_S[:, 0])
+
+F.ax[0].set_title('Europa footpath', weight='bold')
+legend = F.legend(ax_idx=0,
+                  ncol=2, markerscale=1.0,
+                  loc='lower right',
+                  handlelength=1.5,
+                  textcolor=False,
+                  fontsize_scale=0.65,
+                  handletextpad=0.3)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax[0])
+
+plt.savefig('img/FP_EU_LATITUDE_DIF_FASTER.png', bbox_inches='tight')
+
+
+# ===========================================================
+# MOON LONGITUDE VS FOOTPRINT LATITUDE DIFFERENCE
+# ===========================================================
+F = ShareXaxis()
+F.fontsize = 19
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=2, figsize=(5.0, 6.6), dpi='XL')
+F.initialize()
+
+F.panelname = [' a. North ', ' b. South ']
+
+xticks = np.arange(0, 360+1, 45)
+xticklabels = np.arange(0, 360+1, 45, dtype=int)
+
+F.set_xaxis(label=r'Moon System III longitude [$^\circ$W]',
+            min=0.0, max=360.0,
+            ticks=xticks,
+            ticklabels=xticklabels,
+            minor_num=3)
+F.set_yaxis(ax_idx=0, label='',
+            min=-2.7, max=1.2,
+            ticks=np.arange(-2.5, 1+0.1, 0.5),
+            ticklabels=np.arange(-2.5, 1+0.1, 0.5),
+            minor_num=5)
+F.set_yaxis(ax_idx=1, label='',
+            min=-1.2, max=1.2,
+            ticks=np.arange(-1, 1+0.1, 0.5),
+            ticklabels=np.arange(-1, 1+0.1, 0.5),
+            minor_num=5)
+F.fig.supylabel(
+    r'Footprint $\Delta$ longitude [$^\circ$W]', x=-0.01, fontsize=F.fontsize)
+
+# FASTER footpath at 900 km
+result_arr = np.loadtxt('results/FP_EU_NORTH_FASTER.txt')
+theta_modelfp = np.radians(90.0-result_arr[:, 2])
+phi_modelfp = np.radians(360.0-result_arr[:, 3])
+F.ax[0].plot(result_arr[:, 0], np.degrees(2*np.pi-phi_modelfp)-efp_ref_pos_N[:, 1],
+             label='FASTER')
+
+# FASTER footpath at 900 km
+result_arr = np.loadtxt('results/FP_EU_SOUTH_FASTER.txt')
+theta_modelfp = np.radians(90.0-result_arr[:, 2])
+phi_modelfp = np.radians(360.0-result_arr[:, 3])
+F.ax[1].plot(result_arr[:, 0],
+             np.degrees(2*np.pi-phi_modelfp)-efp_ref_pos_S[:, 1])
+
+
+F.ax[0].set_title('Europa footpath', weight='bold')
+legend = F.legend(ax_idx=0,
+                  ncol=2, markerscale=1.0,
+                  loc='lower right',
+                  handlelength=1.5,
+                  textcolor=False,
+                  fontsize_scale=0.65,
+                  handletextpad=0.3)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax[0])
+
+plt.savefig('img/FP_EU_LONGITUDE_DIF_FASTER.png', bbox_inches='tight')
