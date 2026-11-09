@@ -49,6 +49,8 @@ class CSField():
             a1=0.0,
             MLT1=0.0,
             b1=3.64,
+            b2=0.0,
+            MLTb=-0.56,
     ):
         """
         Args:
@@ -71,7 +73,9 @@ class CSField():
             MLT0 (float): Phase MLT (i_phi) [hr]
             a1 (float): Amplitude of the MLT periodocity (I_rho) [MA]
             MLT1 (float): Phase MLT (I_rho) [hr]
-            b1 (float): Additional constant to b_phi [nT]
+            b1 (float): Additional constant to b_cross [nT]
+            b2 (float): Additional constant to b_cross [nT]
+            MLTb (float): Phase MLT (b_cross) [hr]
         """
         self.I_rho0 = I_rho0*(1E+6)      # Total radial current [A]
         self.i_phi0 = i_phi0*(1E+6)      # Azimuthal current density [A m-1]
@@ -91,6 +95,8 @@ class CSField():
         self.a1 = a1*(1E+6)              # Amplitude of the MLT periodocity
         self.MLT1 = MLT1                 # Phase MLT [hr]
         self.b1 = b1*1E-9                # Additional constant to b_phi [T]
+        self.b2 = b2*1E-9                # Additional constant to b_phi [T]
+        self.MLTb = MLTb                 # Phase MLT [hr]
 
     def _sys3_2_cs(
             self,
@@ -243,10 +249,11 @@ class CSField():
             # ============================================
             # Adding b_cross (Provan+ 2024)
             # ============================================
-            b_phs = math.radians(-8.5)
-            b_cross = -(z_cs/D)*self.b1                      # [T]
-            B_rho += -b_cross*math.cos(MLT_rad-b_phs)*g_rho  # [T]
-            B_phi += b_cross*math.sin(MLT_rad-b_phs)*g_rho   # [T]
+            b_phs = math.radians(self.MLTb*360.0/24.0)
+            b_cross_rho = (z_cs/D)*self.b1*math.cos(MLT_rad-b_phs)
+            b_cross_phi = -(z_cs/D)*(self.b1*math.sin(MLT_rad-b_phs)+self.b2)
+            B_rho += b_cross_rho*g_rho   # [T]
+            B_phi += b_cross_phi*g_rho   # [T]
 
         elif abs(z_cs) > D:
             # ==========================================
@@ -292,10 +299,11 @@ class CSField():
             # ============================================
             # Adding b_cross (Provan+ 2024)
             # ============================================
-            b_phs = math.radians(-8.5)
-            b_cross = -sgn*self.b1                           # [T]
-            B_rho += -b_cross*math.cos(MLT_rad-b_phs)*g_rho  # [T]
-            B_phi += b_cross*math.sin(MLT_rad-b_phs)*g_rho   # [T]
+            b_phs = math.radians(self.MLTb*360.0/24.0)
+            b_cross_rho = sgn*self.b1*math.cos(MLT_rad-b_phs)
+            b_cross_phi = -sgn*(self.b1*math.sin(MLT_rad-b_phs)+self.b2)
+            B_rho += b_cross_rho*g_rho   # [T]
+            B_phi += b_cross_phi*g_rho   # [T]
 
         B_x, B_y, B_z = self._cs_2_sys3(
             B_rho,
