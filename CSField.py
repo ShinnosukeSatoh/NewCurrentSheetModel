@@ -163,7 +163,7 @@ class CSField():
             x,
             y,
             z,
-            MLT=0.0
+            MLT=0.0,
     ):
         """
         Args:
@@ -312,7 +312,6 @@ class CSField():
             rho_cs,
             phi_cs,
         )
-
         return B_x, B_y, B_z
 
     def _convert_coordinates(

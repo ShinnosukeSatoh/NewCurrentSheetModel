@@ -670,17 +670,17 @@ if __name__ == '__main__':
     parallel = 5
 
     # a0: 3.58195981E-6 (b1) / 2.24515089E-6 (b2) / 2.19129985E-6 (b3)
-    a0 = 2.8080608E-6
-    MLT0 = 3.15731298  # 1.2411386 (b1) / 2.40631702 (b2) / 2.46607518 (b3)
-    a1 = -21.64324845  # -5.12302579 (b1/b2/b3)
-    MLT1 = 5.46  # -16.93107288 (b1/b2/b3)
-    b1_arr = 3.86  # 3.64 [nT] (Provan+2024) / 4.66 (Cowley+2025)
-    b2_arr = -1.62
-    MLTb = -2.11
-    i_phi0_arr = np.linspace(30.0, 60.0, 100)*1E-6   # 5.2E-5
+    a0 = 1.85346873E-6
+    MLT0 = 2.55932431  # 1.2411386 (b1) / 2.40631702 (b2) / 2.46607518 (b3)
+    a1 = 26.0564807  # -5.12302579 (b1/b2/b3)
+    MLT1 = 18.851  # -16.93107288 (b1/b2/b3)
+    b1_arr = 4.2518  # 3.64 [nT] (Provan+2024) / 4.66 (Cowley+2025)
+    b2_arr = 0.0
+    MLTb = -0.2086
+    i_phi0_arr = np.linspace(30.0, 64.0, 102)*1E-6   # 5.2E-5
     s = 20
     I_rho0_arr = s*np.sinh(
-        np.linspace(np.arcsinh(-20/s), np.arcsinh(80/s), 102)
+        np.linspace(np.arcsinh(-30/s), np.arcsinh(50/s), 103)
     )
     print('i_phi0 [10^-5]:', i_phi0_arr[0]*1E+5, i_phi0_arr[-1]*1E+5)
     print('I_rho0:', I_rho0_arr[0], I_rho0_arr[-1])
