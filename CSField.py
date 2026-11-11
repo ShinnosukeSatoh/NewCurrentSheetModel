@@ -31,8 +31,8 @@ class CSField():
 
     def config(
             self,
-            I_rho0=8.38,
-            i_phi0=4.847E-5,
+            I_rho0=8.29512904,
+            i_phi0=4.84800493E-5,
             D=2.5,
             theta_d_deg=9.3,
             phi_d_deg=155.8,
