@@ -1,0 +1,701 @@
+import numpy as np
+import math
+import matplotlib.pyplot as plt
+import matplotlib.colors as mplcolors
+import matplotlib.ticker as ptick
+import matplotlib.patches as patches
+import matplotlib.patheffects as pe
+from MyPlotRecipe.SharedX import ShareXaxis
+from MyPlotRecipe.UniversalColor import UniversalColor
+from MyPlotRecipe.legend_shadow import legend_shadow
+
+import spiceypy as spice
+import JupiterMag as jm
+from CSField import CSField
+
+UC = UniversalColor()
+UC.set_palette()
+
+F = ShareXaxis()
+F.fontsize = 23
+F.fontname = 'Liberation Sans Narrow'
+F.set_default()
+
+jm.Internal.Config(Model='jrm33', CartesianIn=True,
+                   CartesianOut=True)
+jm.Con2020.Config(equation_type='integral')
+
+
+# ===========================================================
+# CONSTANTS
+# ===========================================================
+MU0 = 4*np.pi*1E-7       # 真空中の透磁率 [H m-1]
+AMU2KG = 1.66E-27        # [kg]
+RJ = 71492.0E+3          # JUPITER RADIUS [m]
+
+
+# ===========================================================
+# CONFIGURE CSFIELD
+# ===========================================================
+csfield = CSField()
+csfield.config(
+    i_phi0=4.845093370096503E-5,   # 4.84800493E-5
+    I_rho0=10.45591036962724,      # 8.29512904
+    a0=1.87067601E-6,              # 1.85346873E-6
+    MLT0=2.7409048,                # 2.55932431
+    a1=25.56805279,                # 26.0564807
+    MLT1=18.83227378,              # 18.851
+    b1=4.2518,
+    b2=0.0,
+    MLTb=-0.2086,
+    D=2.5*math.sqrt(5/3),            # 2.5
+    # c1=5.0,         # 5.0
+    # c2=14.0,        # 14.0
+    # c3=46.0,        # 46.0
+    # w1=-0.06,         # -0.06
+    # w2=1.39,          # 1.39
+    # w3=-0.82,         # -0.82
+)
+
+
+# ===========================================================
+# AZIMUTHAL CURRENT DENSITY
+# ===========================================================
+# FASTER
+rho_cs = np.linspace(0.0, 100.0, 300)*RJ     # [m]
+i_phi_new = csfield.i_phi_profile(
+    MLT=0.0,
+    rho_cs=rho_cs/RJ,
+    each_term=True,
+)   # [A m-1]
+J_phi_new = (i_phi_new/(2*csfield.D*RJ))*(1E-6)*(RJ**2)  # [MA RJ-2]
+I_rho_new = csfield.I_rho_profile(rho_cs=rho_cs/RJ, each_term=True)
+print('i_phi_0 [MA RJ-1]:', csfield.i_phi0*1E-6*RJ)
+print('i_phi_0 [A m-1]:', csfield.i_phi0)
+print('np.max(i_phi_new):', np.max(i_phi_new))
+print('np.min(J_phi_new):', np.min(J_phi_new))
+
+# Wang+2022
+J_phi_w22_6h = np.zeros(rho_cs.size)   # [MA RJ-2]
+J_phi_w22_12h = np.zeros(rho_cs.size)  # [MA RJ-2]
+J_phi_w22_18h = np.zeros(rho_cs.size)  # [MA RJ-2]
+I_phi_w22_6h = np.zeros(rho_cs.size)   # [MA RJ-1]
+I_phi_w22_18h = np.zeros(rho_cs.size)  # [MA RJ-1]
+for i in range(rho_cs.size):
+    J_phi_w22_6h[i] = csfield.J_phi_Wang22(rho_cs[i]/RJ, z=0, MLT=6.0)
+    J_phi_w22_12h[i] = csfield.J_phi_Wang22(rho_cs[i]/RJ, z=0, MLT=12.0)
+    J_phi_w22_18h[i] = csfield.J_phi_Wang22(rho_cs[i]/RJ, z=0, MLT=18.0)
+    I_phi_w22_6h[i] = csfield.i_phi_Wang22(rho_cs[i]/RJ, MLT=6.0)
+    I_phi_w22_18h[i] = csfield.i_phi_Wang22(rho_cs[i]/RJ, MLT=18.0)
+
+# Con2020
+rho_cs_con20 = np.linspace(7.8, 51.4, 100)*RJ         # [m]
+i_phi_con20 = csfield.i_phi_Con20(rho_cs_con20/RJ)    # [A m-1]
+J_phi_con20 = (i_phi_con20/(2*3.6*RJ))*(1E-6)*RJ*RJ   # [MA RJ-2]
+
+
+# ===========================================================
+# 面電流密度(方位角電流)の動径分布を描いてみる
+# ===========================================================
+F = ShareXaxis()
+F.fontsize = 21
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=1, figsize=(5.5, 4.7), dpi='XL')
+F.hspace = 0.15
+F.initialize()
+
+xticks = np.arange(0, 65+1, 5)
+xticklabels = np.arange(0, 65+1, 5, dtype=int)
+
+F.set_xaxis(label=r'$\rho$ [$R_{\rm J}$]',
+            min=0.0, max=35.0,
+            ticks=xticks,
+            ticklabels=xticklabels,
+            minor_num=5)
+F.set_yaxis(ax_idx=0,
+            label=r'$i_{\varphi}(R)$ [MA $R_{\rm J}^{-1}$]',
+            min=-0.2, max=18.0,
+            ticks=np.linspace(0, 18, 10),
+            ticklabels=np.linspace(0, 18, 10, dtype=int),
+            minor_num=2,)
+
+F.ax.plot(rho_cs/RJ, i_phi_new*(1E-6)*RJ,
+          color=UC.red, linewidth=3.0,
+          label='New model')
+F.ax.plot(rho_cs_con20/RJ, i_phi_con20*(1E-6)*RJ,
+          color='k',
+          label='Con2020')
+F.ax.plot(rho_cs/RJ, I_phi_w22_6h,
+          color=UC.blue,
+          label='Wang+2022')
+F.ax.plot(rho_cs/RJ, I_phi_w22_18h,
+          color=UC.blue)
+F.ax.fill_between(x=rho_cs/RJ,
+                  y1=I_phi_w22_6h,
+                  y2=I_phi_w22_18h,
+                  ec=None,
+                  fc=UC.lighterblue,
+                  alpha=0.4, zorder=0.9,)
+
+F.ax.set_title(r'Current density', weight='bold')
+
+legend = F.legend(ax_idx=0,
+                  ncol=1, markerscale=1.0,
+                  loc='upper right',
+                  handlelength=1.6,
+                  textcolor=False,
+                  fontsize_scale=0.65,
+                  handletextpad=0.4)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
+
+plt.savefig('v2_i_phi.png', bbox_inches='tight')
+
+
+# ===========================================================
+# 面電流密度(方位角電流)の動径分布を描いてみる (項ごとに)
+# ===========================================================
+F = ShareXaxis()
+F.fontsize = 21
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=1, figsize=(5.5, 4.7), dpi='XL')
+F.hspace = 0.15
+F.initialize()
+
+xticks = np.arange(0, 65+1, 5)
+xticklabels = np.arange(0, 65+1, 5, dtype=int)
+
+F.set_xaxis(label=r'$\rho$ [$R_{\rm J}$]',
+            min=0.0, max=35.0,
+            ticks=xticks,
+            ticklabels=xticklabels,
+            minor_num=5)
+F.set_yaxis(ax_idx=0,
+            label=r'$i_{\varphi}(R)$ [A m$^{-1}$]',
+            min=-0.2, max=0.4,
+            ticks=np.linspace(-0.2, 0.4, 7),
+            ticklabels=np.linspace(-2, 4, 7)/10,
+            minor_num=5,)
+
+F.ax.plot(rho_cs/RJ,
+          csfield.w1*csfield.f1,  # *(1E-6)*RJ,
+          color='k', linestyle='-',
+          label=r'$w_1 f_1$')
+F.ax.plot(rho_cs/RJ,
+          csfield.w2*csfield.f2,  # *(1E-6)*RJ,
+          color='k', linestyle='--',
+          label=r'$w_2 f_2$')
+F.ax.plot(rho_cs/RJ,
+          csfield.w3*csfield.f3,  # *(1E-6)*RJ,
+          color='k', linestyle='-.',
+          label=r'$w_3 f_3$')
+if csfield.w4 != 0.0:
+    F.ax.plot(rho_cs/RJ,
+              csfield.w4*csfield.f4,  # *(1E-6)*RJ,
+              color='k', linestyle=(2, (2, 2)),
+              label=r'$w_4 f_4$')
+
+F.ax.plot(rho_cs/RJ,
+          (csfield.w1*csfield.f1 +
+           csfield.w2*csfield.f2 +
+           csfield.w3*csfield.f3),
+          color=UC.red, linewidth=3.0,
+          label='New model (total)')
+F.ax.fill_between([0, 100], [-200, 0],
+                  color=UC.lightgray,
+                  alpha=0.4, zorder=-5)
+
+F.ax.set_title(r'Current density', weight='bold')
+
+legend = F.legend(ax_idx=0,
+                  ncol=2, markerscale=1.0,
+                  loc='upper right',
+                  handlelength=1.6,
+                  textcolor=False,
+                  fontsize_scale=0.65,
+                  handletextpad=0.4)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
+
+plt.savefig('v2_i_phi_terms.png', bbox_inches='tight')
+
+
+# ===========================================================
+# 面電流密度(動径方向電流)の動径分布を描いてみる (項ごとに)
+# ===========================================================
+w11, w12, w13 = 0.0, 0.0, 50
+F = ShareXaxis()
+F.fontsize = 21
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=1, figsize=(5.5, 4.7), dpi='XL')
+F.hspace = 0.15
+F.initialize()
+
+xticks = np.arange(0, 65+1, 5)
+xticklabels = np.arange(0, 65+1, 5, dtype=int)
+
+F.set_xaxis(label=r'$\rho$ [$R_{\rm J}$]',
+            min=0.0, max=35.0,
+            ticks=xticks,
+            ticklabels=xticklabels,
+            minor_num=5)
+F.set_yaxis(ax_idx=0,
+            label=r'$I_{\rho}(R)$ [MA]',
+            min=-1.0, max=20.0,
+            ticks=np.linspace(0, 20, 5),
+            ticklabels=np.linspace(0, 20, 5, dtype=int),
+            minor_num=5,)
+
+F.ax.plot(rho_cs/RJ,
+          I_rho_new*1E-6,
+          color=UC.red, linestyle='-',
+          linewidth=2.0,
+          label=r'New model')
+F.ax.plot(rho_cs_con20/RJ,
+          16.7*np.ones(rho_cs_con20.size),
+          color='k', linestyle='--',
+          label=r'Con2020')
+
+F.ax.set_title(r'Current density', weight='bold')
+
+legend = F.legend(ax_idx=0,
+                  ncol=2, markerscale=1.0,
+                  loc='lower right',
+                  handlelength=1.6,
+                  textcolor=False,
+                  fontsize_scale=0.65,
+                  handletextpad=0.4)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
+
+plt.savefig('v2_I_rho_terms.png', bbox_inches='tight')
+
+
+# ===========================================================
+# B1を計算してみる
+# ===========================================================
+r0 = 15.0*RJ                    # Radial distance [m]
+theta0 = np.radians(89.9)       # Colatitude [rad]
+phi0 = np.radians(360.0-112.0)   # East longitude [rad]
+
+x0 = r0*np.sin(theta0)*np.cos(phi0)
+y0 = r0*np.sin(theta0)*np.sin(phi0)
+z0 = r0*np.cos(theta0)
+# print('x0/RJ, y0/RJ, z0/RJ:', x0/RJ, y0/RJ, z0/RJ)
+
+Bx1, By1, Bz1 = csfield.magnetic_field_v2(x0/RJ, y0/RJ, z0/RJ)  # [T]
+print('B_norm (New) [nT]:', math.sqrt(Bx1**2+By1**2+Bz1**2)*1E+9)
+
+Bx1_c, By1_c, Bz1_c = jm.Con2020.Field(x0/RJ, y0/RJ, z0/RJ)  # [nT]
+print('B_norm (Con2020) [nT]:', math.sqrt(Bx1_c**2+By1_c**2+Bz1_c**2))
+
+
+# ===========================================================
+# B1を計算してみる (赤道面で動径方向に)
+# ===========================================================
+r0_arr = np.linspace(2, 45, 100)*RJ  # Radial distance [m]
+theta0 = np.radians(89.5)       # Colatitude [rad]
+phi0 = np.radians(360.0-112.0)   # East longitude [rad]
+
+x0 = r0_arr*np.sin(theta0)*np.cos(phi0)
+y0 = r0_arr*np.sin(theta0)*np.sin(phi0)
+z0 = r0_arr*np.cos(theta0)
+
+Bx1 = np.zeros(x0.size)
+By1 = np.zeros(x0.size)
+Bz1 = np.zeros(x0.size)
+Bphi1 = np.zeros(x0.size)
+for i in range(x0.size):
+    Bx1[i], By1[i], Bz1[i] = csfield.magnetic_field_v2(x0[i]/RJ,
+                                                       y0[i]/RJ,
+                                                       z0[i]/RJ,)
+Brho1 = Bx1*np.cos(phi0) + By1*np.sin(phi0)
+Bphi1 = -Bx1*np.sin(phi0) + By1*np.cos(phi0)
+
+Bx1_c, By1_c, Bz1_c = jm.Con2020.Field(x0/RJ, y0/RJ, z0/RJ)  # [nT]
+Brho1_c = Bx1_c*np.cos(phi0) + By1_c*np.sin(phi0)
+Bphi1_c = -Bx1_c*np.sin(phi0) + By1_c*np.cos(phi0)
+
+
+# ===========================================================
+# B1を計算してみる (z=1RJ で動径方向に)
+# ===========================================================
+rho1_arr = np.linspace(2, 45, 100)*RJ  # Cylindrical radial distance [m]
+phi1 = np.radians(360.0-112.0)   # East longitude [rad]
+
+x1 = rho1_arr*np.cos(phi0)
+y1 = rho1_arr*np.sin(phi0)
+z1 = 2.0*RJ*np.ones(rho1_arr.shape)
+
+Bx2 = np.zeros(x1.size)
+By2 = np.zeros(x1.size)
+Bz2 = np.zeros(x1.size)
+Bphi2 = np.zeros(x1.size)
+for i in range(x1.size):
+    Bx2[i], By2[i], Bz2[i] = csfield.magnetic_field_v2(x1[i]/RJ,
+                                                       y1[i]/RJ,
+                                                       z1[i]/RJ,)
+Brho2 = Bx2*np.cos(phi1) + By2*np.sin(phi1)
+Bphi2 = -Bx2*np.sin(phi1) + By2*np.cos(phi1)
+
+Bx2_c, By2_c, Bz2_c = jm.Con2020.Field(x1/RJ, y1/RJ, z1/RJ)  # [nT]
+Brho2_c = Bx2_c*np.cos(phi1) + By2_c*np.sin(phi1)
+Bphi2_c = -Bx2_c*np.sin(phi1) + By2_c*np.cos(phi1)
+
+
+# ===========================================================
+# B1を計算してみる (r=15RJ & z=2RJ でMLT方向に)
+# 磁力線sweep–backの検証
+# ===========================================================
+rho2 = 15.0*RJ  # Cylindrical radial distance [m]
+phi2 = np.radians(360.0-112.0)   # East longitude [rad]
+
+x2 = rho2*np.cos(phi0)
+y2 = rho2*np.sin(phi0)
+z2 = 2.0*RJ
+MLT2 = np.linspace(0.0, 23.99, 50)
+
+Bx3 = np.zeros(MLT2.size)
+By3 = np.zeros(MLT2.size)
+Bz3 = np.zeros(MLT2.size)
+Bphi3 = np.zeros(x2.size)
+for i in range(MLT2.size):
+    Bx3[i], By3[i], Bz3[i] = csfield.magnetic_field_v2(x2/RJ,
+                                                       y2/RJ,
+                                                       z2/RJ,
+                                                       MLT2[i])
+Brho3 = Bx3*np.cos(phi2) + By3*np.sin(phi2)
+Bphi3 = -Bx3*np.sin(phi2) + By3*np.cos(phi2)
+
+Bx3_c, By3_c, Bz3_c = jm.Con2020.Field(x2/RJ, y2/RJ, z2/RJ)  # [nT]
+Brho3_c = Bx3_c*np.cos(phi2) + By3_c*np.sin(phi2)
+Bphi3_c = -Bx3_c*np.sin(phi2) + By3_c*np.cos(phi2)
+
+
+# ===========================================================
+# |B1|の動径分布を描いてみる
+# ===========================================================
+F = ShareXaxis()
+F.fontsize = 21
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=1, figsize=(5.0, 4.5), dpi='XL')
+F.hspace = 0.15
+F.initialize()
+
+F.draw_panel_name(F.ax, ' a ')
+
+xticks = np.arange(5, 45+1, 5)
+xticklabels = np.arange(5, 45+1, 5, dtype=int)
+
+F.set_xaxis(label=r'$\rho_{\rm cs}$ [$R_{\rm J}$]',
+            min=2.0, max=35.0,
+            ticks=xticks,
+            ticklabels=xticklabels,
+            minor_num=5)
+F.set_yaxis(ax_idx=0,
+            label=r'[nT]',
+            min=-50, max=150.0,
+            ticks=np.linspace(-50, 150, 5),
+            ticklabels=np.linspace(-50, 150, 5),
+            minor_num=5,)
+
+# FASTER (赤道)
+F.ax.plot(r0_arr/RJ,
+          np.sqrt(Bx1**2+By1**2+Bz1**2)*1E+9,
+          color=UC.red,
+          linewidth=1.9,)
+F.ax.plot(r0_arr/RJ,
+          Brho1*1E+9,
+          color=UC.red,
+          linestyle=(5, (5, 5)),
+          linewidth=1.9,)
+F.ax.plot(r0_arr/RJ,
+          Bphi1*1E+9,
+          color=UC.red,
+          linestyle='-.',
+          linewidth=1.9,)
+F.ax.plot(r0_arr/RJ,
+          Bz1*1E+9,
+          color=UC.red,
+          linestyle=(2, (2, 2)),
+          linewidth=1.9,)
+
+# Con2020
+F.ax.plot(r0_arr/RJ,
+          np.sqrt(Bx1_c**2+By1_c**2+Bz1_c**2),
+          color='k',
+          linewidth=1.75,
+          label=r'$|\delta B|$')
+F.ax.plot(r0_arr/RJ,
+          Brho1_c,
+          color='k',
+          linestyle=(4, (4, 4)),
+          linewidth=1.75,
+          label=r'$\delta B_{\rho_{\rm cs}}$')
+F.ax.plot(r0_arr/RJ,
+          Bphi1_c,
+          color='k',
+          linestyle='-.',
+          linewidth=1.75,
+          label=r'$\delta B_{\varphi_{\rm cs}}$')
+F.ax.plot(r0_arr/RJ,
+          Bz1_c,
+          color='k',
+          linestyle=(2, (2, 2)),
+          linewidth=1.75,
+          label=r'$\delta B_{z_{\rm cs}}$')
+
+F.ax.fill_between([0, 100], [-200, 0],
+                  color=UC.lightgray,
+                  alpha=0.35, zorder=-5)
+
+F.ax.text(0.05, 0.05,
+          'Red: FASTER',
+          color=UC.red,
+          fontsize=F.fontsize*0.8,
+          fontweight='bold',
+          verticalalignment='center',
+          horizontalalignment='left',
+          transform=F.ax.transAxes)
+
+F.ax.text(0.95, 0.05,
+          'Black: Con2020',
+          color='k',
+          fontsize=F.fontsize*0.8,
+          fontweight='bold',
+          verticalalignment='center',
+          horizontalalignment='right',
+          transform=F.ax.transAxes)
+
+F.ax.set_title(r'$z_{\rm cs}=0$ $R_{\rm J}$ | Midnight')
+
+legend = F.legend(ax_idx=0,
+                  ncol=1, markerscale=1.0,
+                  loc='upper right',
+                  handlelength=2.8,
+                  textcolor=False,
+                  fontsize_scale=0.65,
+                  handletextpad=0.4)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
+
+plt.savefig('v2_B1_norm.png', bbox_inches='tight')
+plt.savefig('v2_B1_norm.pdf', bbox_inches='tight')
+
+
+# ===========================================================
+# 体積電流密度の動径分布を描いてみる
+# ===========================================================
+F = ShareXaxis()
+F.fontsize = 21
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=1, figsize=(5.5, 4.7), dpi='XL')
+F.hspace = 0.15
+F.initialize()
+
+xticks = np.arange(0, 65+1, 5)
+xticklabels = np.arange(0, 65+1, 5, dtype=int)
+
+F.set_xaxis(label=r'$\rho$ [$R_{\rm J}$]',
+            min=0.0, max=35.0,
+            ticks=xticks,
+            ticklabels=xticklabels,
+            minor_num=5)
+F.set_yaxis(ax_idx=0,
+            label=r'$J_{\varphi}(R)$ [MA $R_{\rm J}^{-2}$]',
+            min=0.0, max=2.5,
+            ticks=np.linspace(0, 2.5, 6),
+            ticklabels=np.linspace(0, 2.5, 6),
+            minor_num=5,)
+
+F.ax.plot(rho_cs/RJ, J_phi_new,
+          color=UC.red, linewidth=3.0,
+          label='New model')
+F.ax.plot(rho_cs_con20/RJ, J_phi_con20,
+          color='k',
+          label='Con2020')
+F.ax.plot(rho_cs/RJ, J_phi_w22_6h,
+          color=UC.blue,
+          label='Wang+2022')
+F.ax.plot(rho_cs/RJ, J_phi_w22_18h,
+          color=UC.blue,)
+F.ax.fill_between(x=rho_cs/RJ,
+                  y1=J_phi_w22_6h,
+                  y2=J_phi_w22_18h,
+                  ec=None,
+                  fc=UC.lighterblue,
+                  alpha=0.4, zorder=0.9,)
+
+F.ax.set_title(r'Current density', weight='bold')
+
+legend = F.legend(ax_idx=0,
+                  ncol=1, markerscale=1.0,
+                  loc='upper right',
+                  handlelength=1.6,
+                  textcolor=False,
+                  fontsize_scale=0.65,
+                  handletextpad=0.4)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
+
+plt.savefig('v2_J_phi.png', bbox_inches='tight')
+
+
+# ===========================================================
+# |B1|の動径分布を描いてみる・赤道面とz=1RJ
+# ===========================================================
+F = ShareXaxis()
+F.fontsize = 21
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=1, figsize=(5.0, 4.5), dpi='XL')
+F.hspace = 0.15
+F.initialize()
+
+F.draw_panel_name(F.ax, ' b ')
+
+xticks = np.arange(5, 45+1, 5)
+xticklabels = np.arange(5, 45+1, 5, dtype=int)
+
+F.set_xaxis(label=r'$\rho_{\rm cs}$ [$R_{\rm J}$]',
+            min=2.0, max=35.0,
+            ticks=xticks,
+            ticklabels=xticklabels,
+            minor_num=5)
+F.set_yaxis(ax_idx=0,
+            label=r'[nT]',
+            min=-50, max=150.0,
+            ticks=np.linspace(-50, 150, 5),
+            ticklabels=np.linspace(-50, 150, 5),
+            minor_num=5,)
+
+# FASTER (赤道)
+F.ax.plot(rho1_arr/RJ,
+          np.sqrt(Bx2**2+By2**2+Bz2**2)*1E+9,
+          color=UC.red,
+          linewidth=1.9,)
+F.ax.plot(rho1_arr/RJ,
+          Brho2*1E+9,
+          color=UC.red,
+          linestyle=(5, (5, 5)),
+          linewidth=1.9,)
+F.ax.plot(rho1_arr/RJ,
+          Bphi2*1E+9,
+          color=UC.red,
+          linestyle='-.',
+          linewidth=1.9,)
+F.ax.plot(rho1_arr/RJ,
+          Bz2*1E+9,
+          color=UC.red,
+          linestyle=(2, (2, 2)),
+          linewidth=1.9,)
+
+# Con2020
+F.ax.plot(rho1_arr/RJ,
+          np.sqrt(Bx2_c**2+By2_c**2+Bz2_c**2),
+          color='k',
+          linewidth=1.75,
+          label=r'$|\delta B|$')
+F.ax.plot(rho1_arr/RJ,
+          Brho2_c,
+          color='k',
+          linestyle=(4, (4, 4)),
+          linewidth=1.75,
+          label=r'$\delta B_{\rho_{\rm cs}}$')
+F.ax.plot(rho1_arr/RJ,
+          Bphi2_c,
+          color='k',
+          linestyle='-.',
+          linewidth=1.75,
+          label=r'$\delta B_{\varphi_{\rm cs}}$')
+F.ax.plot(rho1_arr/RJ,
+          Bz2_c,
+          color='k',
+          linestyle=(2, (2, 2)),
+          linewidth=1.75,
+          label=r'$\delta B_{z_{\rm cs}}$')
+
+F.ax.fill_between([0, 100], [-200, 0],
+                  color=UC.lightgray,
+                  alpha=0.35, zorder=-5)
+
+F.ax.text(0.05, 0.05,
+          'Red: FASTER',
+          color=UC.red,
+          fontsize=F.fontsize*0.8,
+          fontweight='bold',
+          verticalalignment='center',
+          horizontalalignment='left',
+          transform=F.ax.transAxes)
+
+F.ax.text(0.95, 0.05,
+          'Black: Con2020',
+          color='k',
+          fontsize=F.fontsize*0.8,
+          fontweight='bold',
+          verticalalignment='center',
+          horizontalalignment='right',
+          transform=F.ax.transAxes)
+
+F.ax.set_title(r'$z_{\rm cs}=2.0$ $R_{\rm J}$ | Midnight')
+
+legend = F.legend(ax_idx=0,
+                  ncol=1, markerscale=1.0,
+                  loc='upper right',
+                  handlelength=2.8,
+                  textcolor=False,
+                  fontsize_scale=0.65,
+                  handletextpad=0.4)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
+
+plt.savefig('v2_B1_norm_z_1RJ.pdf', bbox_inches='tight')
+
+
+# ===========================================================
+# B1_phiのMLT分布を描いてみる
+# ===========================================================
+F = ShareXaxis()
+F.fontsize = 21
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=1, figsize=(5.0, 4.5), dpi='XL')
+F.hspace = 0.15
+F.initialize()
+
+F.draw_panel_name(F.ax, ' c ')
+
+xticks = np.arange(0, 24+1, 3)
+xticklabels = np.arange(0, 24+1, 3, dtype=int)
+
+F.set_xaxis(label=r'MLT [hour]',
+            min=0.0, max=24.0,
+            ticks=xticks,
+            ticklabels=xticklabels,
+            minor_num=3)
+F.set_yaxis(ax_idx=0,
+            label=r'$\delta B_{z_{\rm cs}} / \delta B_{\varphi_{\rm cs}}$',
+            min=-12, max=0.0,
+            ticks=np.linspace(-12, 0, 5),
+            ticklabels=np.linspace(-12, 0, 5),
+            minor_num=3,)
+
+F.ax.plot(MLT2, Bz3/Bphi3, linewidth=2.0, color=UC.red,
+          label='FASTER')
+F.ax.axhline(y=Bz3_c/Bphi3_c, linewidth=2.0, color='k',
+             label='Con2020')
+
+F.ax.set_title(
+    r'$\rho_{\rm cs}=15.0$ $R_{\rm J}$ | $z_{\rm cs}=2.0$ $R_{\rm J}$')
+
+legend = F.legend(ax_idx=0,
+                  ncol=1, markerscale=1.0,
+                  loc='upper right',
+                  handlelength=2.0,
+                  textcolor=False,
+                  fontsize_scale=0.65,
+                  handletextpad=0.4)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
+
+print('Bphi3:', Bphi3*1E+9)
+print('Bz3/Bphi3:', Bz3/Bphi3)
+plt.savefig('v2_B1_sweptback_15rj.pdf', bbox_inches='tight')
