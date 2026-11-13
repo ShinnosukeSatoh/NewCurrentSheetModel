@@ -293,14 +293,14 @@ def calc_poloidal(
     for i in range(n_time_arr):
         csfield.config(
             i_phi0=i_phi0,
-            D=2.7*math.sqrt(5/3),
+            D=2.5*math.sqrt(5/3),
             a0=a0,
             MLT0=MLT0,
             a1=a1,
             MLT1=MLT1,
             b1=b1,
             b2=b2,
-            MLTb=MLTb
+            MLTb=MLTb,
         )
         dBx2_pc[i], dBy2_pc[i], dBz2_pc[i] = csfield.magnetic_field_v2(rx_pc[i],
                                                                        ry_pc[i],
@@ -387,14 +387,14 @@ def calc_toroidal(
     for i in range(n_time_arr):
         csfield.config(
             I_rho0=I_rho0,
-            D=2.7*math.sqrt(5/3),
+            D=2.5*math.sqrt(5/3),
             a0=a0,
             MLT0=MLT0,
             a1=a1,
             MLT1=MLT1,
             b1=b1,
             b2=b2,
-            MLTb=MLTb
+            MLTb=MLTb,
         )
         dBx2_pc[i], dBy2_pc[i], dBz2_pc[i] = csfield.magnetic_field_v2(rx_pc[i],
                                                                        ry_pc[i],
@@ -564,13 +564,13 @@ def main():
     csfield.config(
         I_rho0=I_rho0_best,
         i_phi0=i_phi0_best,
-        D=2.7*math.sqrt(5/3),
+        D=2.5*math.sqrt(5/3),
         a0=a0,
         MLT0=MLT0,
         a1=a1,
         MLT1=MLT1,
         b1=b1_arr,
-        MLTb=MLTb
+        MLTb=MLTb,
     )
 
     dBx2 = np.zeros(time_arr.size)
@@ -666,10 +666,10 @@ if __name__ == '__main__':
                76, 77, 78, 79, 80]
     parallel = 5
 
-    a0 = 0.0  # 1.87067601E-6    # 1.85346873E-6 (b4)
-    MLT0 = 0.0  # 2.7409048      # 2.55932431 (b4)
-    a1 = 0.0  # 25.56805279      # 26.0564807 (b4)
-    MLT1 = 0.0  # 18.83227378    # 18.851 (b4)
+    a0 = 0.0   # 1.87067601E-6 (b4v2) / 1.94482493E-6 (b4v2d27)
+    MLT0 = 0.0     # 2.7409048 (b4v2) / 2.15539985 (b4v2d27)
+    a1 = 0.0     # 25.56805279 (b4v2) / 26.26359339 (b4v2d27)
+    MLT1 = 0.0   # 18.83227378 (b4v2) / 18.89 (b4v2d27)
     b1_arr = 4.2518  # 3.64 [nT] (Provan+2024) / 4.66 (Cowley+2025)
     MLTb = -0.2086
     i_phi0_arr = np.linspace(30.0, 64.0, 102)*1E-6   # 5.2E-5
@@ -680,7 +680,7 @@ if __name__ == '__main__':
     print('i_phi0 [10^-5]:', i_phi0_arr[0]*1E+5, i_phi0_arr[-1]*1E+5)
     print('I_rho0:', I_rho0_arr[0], I_rho0_arr[-1])
 
-    savedir = 'results/insitu_fit_b4_v2_d27_36rj/result_'
+    savedir = 'results/insitu_fit_b4_v2_36rj/result_'
     save_arr = np.zeros((len(PJ_list), 7))
     start = time.time()
     for i in range(len(PJ_list)):

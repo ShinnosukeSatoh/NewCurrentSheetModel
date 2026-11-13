@@ -98,6 +98,9 @@ class CSField():
         self.b2 = b2*1E-9                # Additional constant to b_phi [T]
         self.MLTb = MLTb                 # Phase MLT [hr]
 
+        self.c_k_list = [c1, c2, c3]
+        self.w_k_list = [w1, w2, w3]
+
     def _sys3_2_cs(
             self,
             x,
@@ -183,6 +186,8 @@ class CSField():
         w3 = self.w3            # [RJ]
         D = self.D              # Half thickness of the current sheet [RJ]
 
+        MLT_rad = 2*np.pi*(MLT)/24.0    # [rad]
+
         # Radial current density [A]
         I_rho0 = self.I_rho0+self.a1*math.cos(np.pi*(MLT-self.MLT1)/12.0)
 
@@ -197,11 +202,7 @@ class CSField():
         rho_cs = np.sqrt(x_cs**2 + y_cs**2)
         phi_cs = np.arctan2(y_cs, x_cs)
 
-        MLT_rad = 2*np.pi*(MLT)/24.0    # [rad]
-        # print('MLT:', MLT)
-
         sgn = np.sign(z_cs)
-        # print('sgn:', sgn)
         if abs(z_cs) <= D:
             # ==========================================
             # B_rho and B_Z
@@ -331,13 +332,9 @@ class CSField():
         Returns:
             tuple: B1 vector (B_rho, B_phi, B_Z) [T]
         """
-        c1 = self.c1            # [RJ]
-        c2 = self.c2            # [RJ]
-        c3 = self.c3            # [RJ]
-        w1 = self.w1            # [RJ]
-        w2 = self.w2            # [RJ]
-        w3 = self.w3            # [RJ]
-        D = self.D              # Half thickness of the current sheet [RJ]
+        D = self.D  # Scale height of the current sheet [RJ]
+
+        MLT_rad = 2*np.pi*(MLT)/24.0    # [rad]
 
         # Radial current density [A]
         I_rho0 = self.I_rho0+self.a1*math.cos(np.pi*(MLT-self.MLT1)/12.0)
@@ -353,21 +350,20 @@ class CSField():
         rho_cs = np.sqrt(x_cs**2 + y_cs**2)
         phi_cs = np.arctan2(y_cs, x_cs)
 
-        MLT_rad = 2*np.pi*(MLT)/24.0    # [rad]
-        # print('MLT:', MLT)
+        # D as a function of rho_cs
+        # D_0 = (self.D_Max-self.D_min)/math.log(36.0/5.0)
+        # D = self.D_min + D_0*math.log(rho_cs/5.0)
 
         sgn = np.sign(z_cs)
-        c_k_list = [c1, c2, c3]
-        w_k_list = [w1, w2, w3]
         if abs(z_cs) <= D:
             # ==========================================
             # B_rho and B_Z
             # ==========================================
             B_rho = 0
             B_Z = 0
-            for k in range(len(c_k_list)):
-                c_k = c_k_list[k]
-                w_k = w_k_list[k]
+            for k in range(len(self.c_k_list)):
+                c_k = self.c_k_list[k]
+                w_k = self.w_k_list[k]
                 C_p, C_m = c_k+z_cs, c_k-z_cs
                 Z_p, Z_m = C_p+D, C_m+D
                 R_p = math.sqrt(rho_cs**2+Z_p**2)
@@ -411,9 +407,9 @@ class CSField():
             # ==========================================
             B_rho = 0
             B_Z = 0
-            for k in range(len(c_k_list)):
-                c_k = c_k_list[k]
-                w_k = w_k_list[k]
+            for k in range(len(self.c_k_list)):
+                c_k = self.c_k_list[k]
+                w_k = self.w_k_list[k]
                 Z_p, Z_m = c_k+abs(z_cs)+D, c_k+abs(z_cs)-D
                 R_p = math.sqrt(rho_cs**2+Z_p**2)
                 R_m = math.sqrt(rho_cs**2+Z_m**2)
