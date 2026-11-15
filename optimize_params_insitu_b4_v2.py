@@ -350,11 +350,11 @@ def calc_poloidal(
     RMS_poloidal_cs = math.sqrt(
         (
             np.sum(
-                (dBrho_cs[in_30rj:in_5rj]-dBrho2_cs[in_30rj:in_5rj])**2 +
-                (dBz_cs[in_30rj:in_5rj]-dBz2_cs[in_30rj:in_5rj])**2
+                (dBrho_cs[in_30rj:in_5rj]-dBrho2_cs[in_30rj:in_5rj])**2
+                + (dBz_cs[in_30rj:in_5rj]-dBz2_cs[in_30rj:in_5rj])**2
             ) + np.sum(
-                (dBrho_cs[out_5rj:out_30rj]-dBrho2_cs[out_5rj:out_30rj])**2 +
-                (dBz_cs[out_5rj:out_30rj]-dBz2_cs[out_5rj:out_30rj])**2
+                (dBrho_cs[out_5rj:out_30rj]-dBrho2_cs[out_5rj:out_30rj])**2
+                + (dBz_cs[out_5rj:out_30rj]-dBz2_cs[out_5rj:out_30rj])**2
             )
         )/(2*in_num+2*out_num)
     )
@@ -446,6 +446,9 @@ def calc_toroidal(
             np.sum(
                 (dBphi_cs[in_30rj:in_5rj]-dBphi2_cs[in_30rj:in_5rj])**2
             )
+            # + np.sum(
+            #     (dBphi_cs[out_5rj:out_30rj]-dBphi2_cs[out_5rj:out_30rj])**2
+            # )
         )/(in_num)
     )
 
@@ -584,10 +587,10 @@ def main():
     dBx2 *= 1E+9    # [nT]
     dBy2 *= 1E+9    # [nT]
     dBz2 *= 1E+9    # [nT]
-    dBr2 = dBx2*sin_theta*cos_phi + dBy2 * \
-        sin_theta*sin_phi + dBz2*cos_theta
-    dBtheta2 = dBx2*cos_theta*cos_phi + \
-        dBy2*cos_theta*sin_phi - dBz2*sin_theta
+    dBr2 = dBx2*sin_theta*cos_phi + dBy2 *
+    sin_theta*sin_phi + dBz2*cos_theta
+    dBtheta2 = dBx2*cos_theta*cos_phi +
+    dBy2*cos_theta*sin_phi - dBz2*sin_theta
     dBphi2 = -dBx2*sin_phi + dBy2*cos_phi
     dB2 = np.sqrt(dBx2**2+dBy2**2+dBz2**2)
 
@@ -629,12 +632,13 @@ def main():
     RMS_total = math.sqrt(
         (
             np.sum(
-                (dBr[in_30rj:in_5rj]-dBr2[in_30rj:in_5rj])**2 +
-                (dBtheta[in_30rj:in_5rj]-dBtheta2[in_30rj:in_5rj])**2 +
-                (dBphi[in_30rj:in_5rj]-dBphi2[in_30rj:in_5rj])**2
+                (dBr[in_30rj:in_5rj]-dBr2[in_30rj:in_5rj])**2
+                + (dBtheta[in_30rj:in_5rj]-dBtheta2[in_30rj:in_5rj])**2
+                + (dBphi[in_30rj:in_5rj]-dBphi2[in_30rj:in_5rj])**2
             ) + np.sum(
-                (dBr[out_5rj:out_30rj]-dBr2[out_5rj:out_30rj])**2 +
-                (dBtheta[out_5rj:out_30rj]-dBtheta2[out_5rj:out_30rj])**2
+                (dBr[out_5rj:out_30rj]-dBr2[out_5rj:out_30rj])**2
+                + (dBtheta[out_5rj:out_30rj]-dBtheta2[out_5rj:out_30rj])**2
+                # + (dBphi[out_5rj:out_30rj]-dBphi2[out_5rj:out_30rj])**2
             )
         )/(3*in_num+2*out_num))
     print('RMS total:', RMS_total)
@@ -666,10 +670,10 @@ if __name__ == '__main__':
                76, 77, 78, 79, 80]
     parallel = 5
 
-    a0 = 0.0   # 1.87067601E-6 (b4v2) / 1.94482493E-6 (b4v2d27)
-    MLT0 = 0.0     # 2.7409048 (b4v2) / 2.15539985 (b4v2d27)
-    a1 = 0.0     # 25.56805279 (b4v2) / 26.26359339 (b4v2d27)
-    MLT1 = 0.0   # 18.83227378 (b4v2) / 18.89 (b4v2d27)
+    a0 = 0.0  # 1.87067601E-6  # 1.87067601E-6 (b4v2) / 1.94482493E-6 (b4v2d27)
+    MLT0 = 0.0  # 2.7409048  # 2.7409048 (b4v2) / 2.15539985 (b4v2d27)
+    a1 = 0.0  # 25.56805279  # 25.56805279 (b4v2) / 26.26359339 (b4v2d27)
+    MLT1 = 0.0  # 18.83227378  # 18.83227378 (b4v2) / 18.89 (b4v2d27)
     b1_arr = 4.2518  # 3.64 [nT] (Provan+2024) / 4.66 (Cowley+2025)
     MLTb = -0.2086
     i_phi0_arr = np.linspace(30.0, 64.0, 102)*1E-6   # 5.2E-5

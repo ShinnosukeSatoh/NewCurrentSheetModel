@@ -95,7 +95,7 @@ class CSField():
         self.a1 = a1*(1E+6)              # Amplitude of the MLT periodocity
         self.MLT1 = MLT1                 # Phase MLT [hr]
         self.b1 = b1*1E-9                # Additional constant to b_phi [T]
-        self.b2 = b2*1E-9                # Additional constant to b_phi [T]
+        self.b2 = b2                     #
         self.MLTb = MLTb                 # Phase MLT [hr]
 
         self.c_k_list = [c1, c2, c3]
@@ -319,142 +319,6 @@ class CSField():
         )
         return B_x, B_y, B_z
 
-    def _B_vector_cylindrical_v2_saved(
-            self,
-            x,
-            y,
-            z,
-            MLT=0.0,
-    ):
-        """
-        Args:
-            x (float): SIII right hand [RJ]
-            y (float): SIII right hand [RJ]
-            z (float): SIII right hand [RJ]
-            MLT (float): Magnetic local time [hr]
-
-        Returns:
-            tuple: B1 vector (B_rho, B_phi, B_Z) [T]
-        """
-        D = self.D  # Scale height of the current sheet [RJ]
-
-        MLT_rad = 2*np.pi*(MLT)/24.0    # [rad]
-
-        # Radial current density [A]
-        I_rho0 = self.I_rho0+self.a1*math.cos(np.pi*(MLT-self.MLT1)/12.0)
-
-        # Azimuthal current density [A m-1]
-        i_phi = self.i_phi0+self.a0*math.cos(np.pi*(MLT-self.MLT0)/12.0)
-
-        x_cs, y_cs, z_cs = self._sys3_2_cs(
-            x,
-            y,
-            z,
-        )
-        rho_cs = np.sqrt(x_cs**2 + y_cs**2)
-        phi_cs = np.arctan2(y_cs, x_cs)
-
-        # D as a function of rho_cs
-        # D_0 = (self.D_Max-self.D_min)/math.log(36.0/5.0)
-        # D = self.D_min + D_0*math.log(rho_cs/5.0)
-
-        sgn = np.sign(z_cs)
-        if abs(z_cs) <= D:
-            # ==========================================
-            # B_rho and B_Z
-            # ==========================================
-            B_rho = 0
-            B_Z = 0
-            for k in range(len(self.c_k_list)):
-                c_k = self.c_k_list[k]
-                w_k = self.w_k_list[k]
-                C_p, C_m = c_k+z_cs, c_k-z_cs
-                Z_p, Z_m = C_p+D, C_m+D
-                R_p = math.sqrt(rho_cs**2+Z_p**2)
-                R_m = math.sqrt(rho_cs**2+Z_m**2)
-                R_0 = math.sqrt(rho_cs**2+c_k**2)
-
-                B_rho += w_k*(R_p*(2*D-Z_p)-R_m*(2*D-Z_m)+4*z_cs*R_0 -
-                              (rho_cs**2)*math.log((Z_p+R_p)/(Z_m+R_m)))
-
-                B_Z += w_k*(-R_p - R_m + (2*R_0**2+D**2-z_cs**2)/R_0 +
-                            C_p*math.log(Z_p+R_p) + C_m*math.log(Z_m+R_m) -
-                            2*c_k*math.log(c_k+R_0))
-
-            B_rho *= 3*MU0*i_phi/(8*rho_cs*(D**3))  # [T]
-            B_Z *= 3*MU0*i_phi/(4*(D**3))           # [T]
-
-            # ============================================
-            # B_phi (1+tanh) (rho->0) (similar to Con2020)
-            # ============================================
-            if rho_cs < 15:
-                g_rho = 0.5*(1.0+math.tanh((rho_cs-3.3)/1.1))
-            else:
-                g_rho = 1.0
-            I_rho = I_rho0*g_rho
-            B_phi = z_cs*(3*D**2-z_cs**2)/(2*D**3)
-            B_phi *= -((MU0*I_rho)/(2*np.pi*rho_cs*RJ))  # [T]
-
-            # ============================================
-            # Adding b_cross (Provan+ 2024)
-            # ============================================
-            b_phs = math.radians(self.MLTb*360.0/24.0)
-            b_cross = self.b1*z_cs*(3*D**2-z_cs**2)/(2*D**3)*g_rho
-            b_cross_rho = b_cross*math.cos(MLT_rad-b_phs)
-            b_cross_phi = -b_cross*math.sin(MLT_rad-b_phs)
-            B_rho += b_cross_rho   # [T]
-            B_phi += b_cross_phi   # [T]
-
-        elif abs(z_cs) > D:
-            # ==========================================
-            # B_rho and B_Z
-            # ==========================================
-            B_rho = 0
-            B_Z = 0
-            for k in range(len(self.c_k_list)):
-                c_k = self.c_k_list[k]
-                w_k = self.w_k_list[k]
-                Z_p, Z_m = c_k+abs(z_cs)+D, c_k+abs(z_cs)-D
-                R_p = math.sqrt(rho_cs**2+Z_p**2)
-                R_m = math.sqrt(rho_cs**2+Z_m**2)
-
-                B_rho += w_k*(Z_p*R_m - Z_m*R_p -
-                              (rho_cs**2)*math.log((Z_p+R_p)/(Z_m+R_m)))
-                B_Z += w_k*((c_k+abs(z_cs))*math.log((Z_p+R_p)/(Z_m+R_m)) +
-                            R_m - R_p)
-
-            B_rho *= sgn*3*MU0*i_phi/(8*rho_cs*(D**3))  # [T]
-            B_Z *= 3*MU0*i_phi/(4*(D**3))           # [T]
-
-            # ============================================
-            # B_phi (1+tanh) (rho->0) (similar to Con2020)
-            # ============================================
-            if rho_cs < 15:
-                g_rho = 0.5*(1.0+math.tanh((rho_cs-3.3)/1.1))
-            else:
-                g_rho = 1.0
-            I_rho = I_rho0*g_rho
-            B_phi = -sgn*((MU0*I_rho)/(2*np.pi*rho_cs*RJ))  # [T]
-
-            # ============================================
-            # Adding b_cross (Provan+ 2024)
-            # ============================================
-            b_phs = math.radians(self.MLTb*360.0/24.0)
-            b_cross = sgn*self.b1*g_rho
-            b_cross_rho = b_cross*math.cos(MLT_rad-b_phs)
-            b_cross_phi = -b_cross*math.sin(MLT_rad-b_phs)
-            B_rho += b_cross_rho   # [T]
-            B_phi += b_cross_phi   # [T]
-
-        B_x, B_y, B_z = self._cs_2_sys3(
-            B_rho,
-            B_phi,
-            B_Z,
-            rho_cs,
-            phi_cs,
-        )
-        return B_x, B_y, B_z
-
     def _B_vector_cylindrical_v2(
             self,
             rho_cs,
@@ -481,6 +345,9 @@ class CSField():
 
         # Azimuthal current density [A m-1]
         i_phi = self.i_phi0+self.a0*math.cos(np.pi*(MLT-self.MLT0)/12.0)
+        if self.b2 != 0:
+            i_phi = self.i_phi0 * \
+                (1.0+self.b2*math.cos(np.pi*(MLT-self.MLT0)/12.0))
 
         sgn = np.sign(z_cs)
         if abs(z_cs) <= D:
