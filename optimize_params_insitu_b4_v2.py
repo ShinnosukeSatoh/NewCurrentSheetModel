@@ -587,10 +587,8 @@ def main():
     dBx2 *= 1E+9    # [nT]
     dBy2 *= 1E+9    # [nT]
     dBz2 *= 1E+9    # [nT]
-    dBr2 = dBx2*sin_theta*cos_phi + dBy2 *
-    sin_theta*sin_phi + dBz2*cos_theta
-    dBtheta2 = dBx2*cos_theta*cos_phi +
-    dBy2*cos_theta*sin_phi - dBz2*sin_theta
+    dBr2 = dBx2*sin_theta*cos_phi + dBy2*sin_theta*sin_phi + dBz2*cos_theta
+    dBtheta2 = dBx2*cos_theta*cos_phi + dBy2*cos_theta*sin_phi - dBz2*sin_theta
     dBphi2 = -dBx2*sin_phi + dBy2*cos_phi
     dB2 = np.sqrt(dBx2**2+dBy2**2+dBz2**2)
 
@@ -670,21 +668,21 @@ if __name__ == '__main__':
                76, 77, 78, 79, 80]
     parallel = 5
 
-    a0 = 0.0  # 1.87067601E-6  # 1.87067601E-6 (b4v2) / 1.94482493E-6 (b4v2d27)
-    MLT0 = 0.0  # 2.7409048  # 2.7409048 (b4v2) / 2.15539985 (b4v2d27)
-    a1 = 0.0  # 25.56805279  # 25.56805279 (b4v2) / 26.26359339 (b4v2d27)
-    MLT1 = 0.0  # 18.83227378  # 18.83227378 (b4v2) / 18.89 (b4v2d27)
+    a0 = 1.87067601E-6  # 1.87067601E-6 (b4v2) / 1.94482493E-6 (b4v2d27)
+    MLT0 = 2.7409048  # 2.7409048 (b4v2) / 2.15539985 (b4v2d27)
+    a1 = 25.56805279  # 25.56805279 (b4v2) / 26.26359339 (b4v2d27)
+    MLT1 = 18.83227378  # 18.83227378 (b4v2) / 18.89 (b4v2d27)
     b1_arr = 4.2518  # 3.64 [nT] (Provan+2024) / 4.66 (Cowley+2025)
     MLTb = -0.2086
     i_phi0_arr = np.linspace(30.0, 64.0, 102)*1E-6   # 5.2E-5
     s = 20
     I_rho0_arr = s*np.sinh(
-        np.linspace(np.arcsinh(-30/s), np.arcsinh(75/s), 103)
+        np.linspace(np.arcsinh(-30/s), np.arcsinh(50/s), 103)
     )
     print('i_phi0 [10^-5]:', i_phi0_arr[0]*1E+5, i_phi0_arr[-1]*1E+5)
     print('I_rho0:', I_rho0_arr[0], I_rho0_arr[-1])
 
-    savedir = 'results/insitu_fit_b4_v2_36rj/result_'
+    savedir = 'results/insitu_fit_a0_a1_b4_v2_36rj/result_'
     save_arr = np.zeros((len(PJ_list), 7))
     start = time.time()
     for i in range(len(PJ_list)):

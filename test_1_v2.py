@@ -674,10 +674,10 @@ F.set_xaxis(label=r'MLT [hour]',
             minor_num=3)
 F.set_yaxis(ax_idx=0,
             label=r'$\delta B_{z_{\rm cs}} / \delta B_{\varphi_{\rm cs}}$',
-            min=-12, max=0.0,
-            ticks=np.linspace(-12, 0, 5),
-            ticklabels=np.linspace(-12, 0, 5),
-            minor_num=3,)
+            min=-10, max=0.0,
+            ticks=np.linspace(-10, 0, 5),
+            ticklabels=np.linspace(-10, 0, 5),
+            minor_num=5,)
 
 F.ax.plot(MLT2, Bz3/Bphi3, linewidth=2.0, color=UC.red,
           label='FASTER')
