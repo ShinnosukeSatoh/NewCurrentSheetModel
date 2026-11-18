@@ -47,19 +47,16 @@ RJ = 71492.0E+3          # JUPITER RADIUS [m]
 # ===========================================================
 csfield = CSField()
 csfield.config(
-    I_rho0=8.3795,
-    i_phi0=4.91719E-5,
-    # D=2.5,          # 2.5
-    # c1=5.0,         # 5.0
-    # c2=14.0,        # 14.0
-    # c3=46.0,        # 46.0
-    w1=-0.06,       # -0.06
-    w2=1.395,       # 1.39
-    w3=-0.95,       # -0.90
-    a0=2.19129985E-6,
-    MLT0=2.46607518,
-    a1=-5.12302579,
-    MLT1=-16.93107288,
+    i_phi0=4.845093370096503E-5,   # 4.84800493E-5
+    I_rho0=10.45591036962724,      # 8.29512904
+    a0=1.87067601E-6,              # 1.85346873E-6
+    MLT0=2.7409048,                # 2.55932431
+    a1=25.56805279,                # 26.0564807
+    MLT1=18.83227378,              # 18.851
+    b1=4.2518,
+    b2=0.0,
+    MLTb=-0.2086,
+    D=2.5*math.sqrt(5/3),          # 2.5
 )
 
 
@@ -85,7 +82,7 @@ start = time.time()
 for i in range(Niter):
     # Community codes
     Bx0, By0, Bz0 = jm.Internal.Field(x/RJ, y/RJ, z/RJ)       # [nT]
-    Bx1, By1, Bz1 = csfield.magnetic_field(x/RJ, y/RJ, z/RJ)  # [T]
+    Bx1, By1, Bz1 = csfield.magnetic_field_v2(x/RJ, y/RJ, z/RJ)  # [T]
     Bx = (Bx0*1E-9)+Bx1     # [T]
     By = (By0*1E-9)+By1     # [T]
     Bz = (Bz0*1E-9)+Bz1     # [T]
@@ -153,7 +150,7 @@ Niter = int(70000)
 ds0 = 3000000.0   # [m]
 p = 3.0
 
-"""# 北半球
+# 北半球
 ns = -1     # -1: north; 1: south
 result_arr = np.zeros((phi0.size, 4))
 start = time.time()
@@ -162,7 +159,7 @@ for j in range(x0.size):
     for i in range(Niter):
         # Community codes
         Bx0, By0, Bz0 = jm.Internal.Field(x/RJ, y/RJ, z/RJ)       # [nT]
-        Bx1, By1, Bz1 = csfield.magnetic_field(
+        Bx1, By1, Bz1 = csfield.magnetic_field_v2(
             x/RJ, y/RJ, z/RJ, MLT=6.0)  # [T]
         Bx = (Bx0*1E-9)+Bx1     # [T]
         By = (By0*1E-9)+By1     # [T]
@@ -217,7 +214,7 @@ for j in range(x0.size):
     for i in range(Niter):
         # Community codes
         Bx0, By0, Bz0 = jm.Internal.Field(x/RJ, y/RJ, z/RJ)       # [nT]
-        Bx1, By1, Bz1 = csfield.magnetic_field(
+        Bx1, By1, Bz1 = csfield.magnetic_field_v2(
             x/RJ, y/RJ, z/RJ, MLT=6.0)  # [T]
         Bx = (Bx0*1E-9)+Bx1     # [T]
         By = (By0*1E-9)+By1     # [T]
@@ -260,7 +257,7 @@ for j in range(x0.size):
     )
 
 print('Time [sec]:', time.time()-start)
-np.savetxt('results/FP_GA_SOUTH_FASTER.txt', result_arr)"""
+np.savetxt('results/FP_GA_SOUTH_FASTER.txt', result_arr)
 
 
 # ===========================================================

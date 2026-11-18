@@ -31,8 +31,8 @@ class CSField():
 
     def config(
             self,
-            I_rho0=11.7537039722781,       # 8.29512904,
-            i_phi0=4.845093370096503E-5,   # 4.84800493E-5,
+            I_rho0=10.033388761574646,     # 8.29512904,
+            i_phi0=4.838275473116932E-5,   # 4.84800493E-5,
             D=2.5*math.sqrt(5/3),          # 2.5
             theta_d_deg=9.3,
             phi_d_deg=155.8,
@@ -389,8 +389,9 @@ class CSField():
             # ============================================
             # Adding b_cross (Provan+ 2024)
             # ============================================
+            h_rho = 0.5*(1.0+math.tanh((rho_cs-20.0)/3.0))
             b_phs = math.radians(self.MLTb*360.0/24.0)
-            b_cross = self.b1*z_cs*(3*D**2-z_cs**2)/(2*D**3)*g_rho
+            b_cross = self.b1*z_cs*(3*D**2-z_cs**2)/(2*D**3)*h_rho
             b_cross_rho = b_cross*math.cos(MLT_rad-b_phs)
             b_cross_phi = -b_cross*math.sin(MLT_rad-b_phs)
             B_rho_cs += b_cross_rho   # [T]
@@ -430,8 +431,9 @@ class CSField():
             # ============================================
             # Adding b_cross (Provan+ 2024)
             # ============================================
+            h_rho = 0.5*(1.0+math.tanh((rho_cs-20.0)/3.0))
             b_phs = math.radians(self.MLTb*360.0/24.0)
-            b_cross = sgn*self.b1*g_rho
+            b_cross = sgn*self.b1*h_rho
             b_cross_rho = b_cross*math.cos(MLT_rad-b_phs)
             b_cross_phi = -b_cross*math.sin(MLT_rad-b_phs)
             B_rho_cs += b_cross_rho   # [T]

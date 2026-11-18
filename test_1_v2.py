@@ -39,16 +39,15 @@ RJ = 71492.0E+3          # JUPITER RADIUS [m]
 # ===========================================================
 csfield = CSField()
 csfield.config(
-    i_phi0=4.845093370096503E-5,   # 4.84800493E-5
-    I_rho0=10.45591036962724,      # 8.29512904
-    a0=1.87067601E-6,              # 1.85346873E-6
-    MLT0=2.7409048,                # 2.55932431
-    a1=25.56805279,                # 26.0564807
-    MLT1=18.83227378,              # 18.851
+    i_phi0=4.838275473116932E-5,  # 4.845093370096503E-5
+    I_rho0=10.033388761574646,    # 10.45591036962724
+    a0=2.8333677E-6,              # 1.87067601E-6
+    MLT0=1.56400572,              # 2.7409048
+    a1=14.95621835,               # 25.56805279
+    MLT1=19.83627108,             # 18.83227378
     b1=4.2518,
-    b2=0.0,
     MLTb=-0.2086,
-    D=2.5*math.sqrt(5/3),            # 2.5
+    D=2.5*math.sqrt(5/3),          # 2.5
     # c1=5.0,         # 5.0
     # c2=14.0,        # 14.0
     # c3=46.0,        # 46.0
@@ -699,3 +698,51 @@ legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
 print('Bphi3:', Bphi3*1E+9)
 print('Bz3/Bphi3:', Bz3/Bphi3)
 plt.savefig('v2_B1_sweptback_15rj.pdf', bbox_inches='tight')
+
+
+# ===========================================================
+# B1_rhoのMLT分布を描いてみる
+# ===========================================================
+F = ShareXaxis()
+F.fontsize = 21
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=1, figsize=(5.0, 4.5), dpi='XL')
+F.hspace = 0.15
+F.initialize()
+
+F.draw_panel_name(F.ax, ' c ')
+
+xticks = np.arange(0, 24+1, 3)
+xticklabels = np.arange(0, 24+1, 3, dtype=int)
+
+F.set_xaxis(label=r'MLT [hour]',
+            min=0.0, max=24.0,
+            ticks=xticks,
+            ticklabels=xticklabels,
+            minor_num=3)
+F.set_yaxis(ax_idx=0,
+            label=r'$\delta B_{\rho_{\rm cs}}$ [nT]',
+            min=-10, max=100,
+            ticks=np.linspace(0, 100, 5),
+            ticklabels=np.linspace(0, 100, 5),
+            minor_num=5,)
+
+F.ax.plot(MLT2, Brho3*1E+9, linewidth=2.0, color=UC.red,
+          label='FASTER')
+F.ax.axhline(y=Brho3_c, linewidth=2.0, color='k',
+             label='Con2020')
+
+F.ax.set_title(
+    r'$\rho_{\rm cs}=15.0$ $R_{\rm J}$ | $z_{\rm cs}=2.0$ $R_{\rm J}$')
+
+legend = F.legend(ax_idx=0,
+                  ncol=1, markerscale=1.0,
+                  loc='upper right',
+                  handlelength=2.0,
+                  textcolor=False,
+                  fontsize_scale=0.65,
+                  handletextpad=0.4)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
+
+plt.savefig('v2_B1_lobe_15rj.pdf', bbox_inches='tight')
