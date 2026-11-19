@@ -39,28 +39,28 @@ RJ = 71492.0E+3          # JUPITER RADIUS [m]
 # ===========================================================
 csfield = CSField()
 csfield.config(
-    i_phi0=4.838275473116932E-5,  # 4.845093370096503E-5
-    I_rho0=10.033388761574646,    # 10.45591036962724
-    a0=2.8333677E-6,              # 1.87067601E-6
-    MLT0=1.56400572,              # 2.7409048
-    a1=14.95621835,               # 25.56805279
-    MLT1=19.83627108,             # 18.83227378
+    i_phi0=4.838275473116932E-5,
+    I_rho0=10.033388761574646,
+    a0=2.8333677E-6,
+    MLT0=1.56400572,
+    a1=14.95621835,
+    MLT1=19.83627108,
     b1=4.2518,
     MLTb=-0.2086,
-    D=2.5*math.sqrt(5/3),          # 2.5
+    D=2.5*math.sqrt(5/3),
     # c1=5.0,         # 5.0
     # c2=14.0,        # 14.0
     # c3=46.0,        # 46.0
-    # w1=-0.06,         # -0.06
-    # w2=1.39,          # 1.39
-    # w3=-0.82,         # -0.82
+    # w1=-0.06,       # -0.06
+    # w2=1.39,        # 1.39
+    # w3=-0.82,       # -0.82
 )
 
 
 # ===========================================================
 # AZIMUTHAL CURRENT DENSITY
 # ===========================================================
-# FASTER
+# MASTER
 rho_cs = np.linspace(0.0, 100.0, 300)*RJ     # [m]
 i_phi_new = csfield.i_phi_profile(
     MLT=0.0,
@@ -71,7 +71,7 @@ J_phi_new = (i_phi_new/(2*csfield.D*RJ))*(1E-6)*(RJ**2)  # [MA RJ-2]
 I_rho_new = csfield.I_rho_profile(rho_cs=rho_cs/RJ, each_term=True)
 print('i_phi_0 [MA RJ-1]:', csfield.i_phi0*1E-6*RJ)
 print('i_phi_0 [A m-1]:', csfield.i_phi0)
-print('np.max(i_phi_new):', np.max(i_phi_new))
+print('np.min(i_phi_new):', np.min(i_phi_new))
 print('np.min(J_phi_new):', np.min(J_phi_new))
 
 # Wang+2022
@@ -216,6 +216,9 @@ legend = F.legend(ax_idx=0,
                   handletextpad=0.4)
 legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
 
+print('Three term min:', np.min((csfield.w1*csfield.f1 +
+                                 csfield.w2*csfield.f2 +
+                                 csfield.w3*csfield.f3)))
 plt.savefig('v2_i_phi_terms.png', bbox_inches='tight')
 
 
@@ -358,13 +361,18 @@ Bx3 = np.zeros(MLT2.size)
 By3 = np.zeros(MLT2.size)
 Bz3 = np.zeros(MLT2.size)
 Bphi3 = np.zeros(x2.size)
+
+Bx3_i, By3_i, Bz3_i = jm.Internal.Field(x2/RJ, y2/RJ, z2/RJ)  # [nT]
+Brho3_i = Bx3_i*np.cos(phi2) + By3_i*np.sin(phi2)
+Bphi3_i = -Bx3_i*np.sin(phi2) + By3_i*np.cos(phi2)
+
 for i in range(MLT2.size):
     Bx3[i], By3[i], Bz3[i] = csfield.magnetic_field_v2(x2/RJ,
                                                        y2/RJ,
                                                        z2/RJ,
                                                        MLT2[i])
-Brho3 = Bx3*np.cos(phi2) + By3*np.sin(phi2)
-Bphi3 = -Bx3*np.sin(phi2) + By3*np.cos(phi2)
+Brho3 = (Bx3*np.cos(phi2) + By3*np.sin(phi2))*1E+9    # [nT]
+Bphi3 = (-Bx3*np.sin(phi2) + By3*np.cos(phi2))*1E+9   # [nT]
 
 Bx3_c, By3_c, Bz3_c = jm.Con2020.Field(x2/RJ, y2/RJ, z2/RJ)  # [nT]
 Brho3_c = Bx3_c*np.cos(phi2) + By3_c*np.sin(phi2)
@@ -399,7 +407,7 @@ F.set_yaxis(ax_idx=0,
             ticklabels=np.linspace(-50, 150, 5),
             minor_num=5,)
 
-# FASTER (赤道)
+# MASTER (赤道)
 F.ax.plot(r0_arr/RJ,
           np.sqrt(Bx1**2+By1**2+Bz1**2)*1E+9,
           color=UC.red,
@@ -450,7 +458,7 @@ F.ax.fill_between([0, 100], [-200, 0],
                   alpha=0.35, zorder=-5)
 
 F.ax.text(0.05, 0.05,
-          'Red: FASTER',
+          'Red: MASTER',
           color=UC.red,
           fontsize=F.fontsize*0.8,
           fontweight='bold',
@@ -568,7 +576,7 @@ F.set_yaxis(ax_idx=0,
             ticklabels=np.linspace(-50, 150, 5),
             minor_num=5,)
 
-# FASTER (赤道)
+# MASTER (赤道)
 F.ax.plot(rho1_arr/RJ,
           np.sqrt(Bx2**2+By2**2+Bz2**2)*1E+9,
           color=UC.red,
@@ -619,7 +627,7 @@ F.ax.fill_between([0, 100], [-200, 0],
                   alpha=0.35, zorder=-5)
 
 F.ax.text(0.05, 0.05,
-          'Red: FASTER',
+          'Red: MASTER',
           color=UC.red,
           fontsize=F.fontsize*0.8,
           fontweight='bold',
@@ -672,15 +680,15 @@ F.set_xaxis(label=r'MLT [hour]',
             ticklabels=xticklabels,
             minor_num=3)
 F.set_yaxis(ax_idx=0,
-            label=r'$\delta B_{z_{\rm cs}} / \delta B_{\varphi_{\rm cs}}$',
+            label=r'$B_{z_{\rm cs}} / B_{\varphi_{\rm cs}}$',
             min=-10, max=0.0,
             ticks=np.linspace(-10, 0, 5),
             ticklabels=np.linspace(-10, 0, 5),
             minor_num=5,)
 
-F.ax.plot(MLT2, Bz3/Bphi3, linewidth=2.0, color=UC.red,
-          label='FASTER')
-F.ax.axhline(y=Bz3_c/Bphi3_c, linewidth=2.0, color='k',
+F.ax.plot(MLT2, (Bz3_i+Bz3)/(Bphi3_i+Bphi3), linewidth=2.0, color=UC.red,
+          label='MASTER')
+F.ax.axhline(y=(Bz3_i+Bz3_c)/(Bphi3_i+Bphi3_c), linewidth=2.0, color='k',
              label='Con2020')
 
 F.ax.set_title(
@@ -695,8 +703,6 @@ legend = F.legend(ax_idx=0,
                   handletextpad=0.4)
 legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
 
-print('Bphi3:', Bphi3*1E+9)
-print('Bz3/Bphi3:', Bz3/Bphi3)
 plt.savefig('v2_B1_sweptback_15rj.pdf', bbox_inches='tight')
 
 
@@ -728,8 +734,8 @@ F.set_yaxis(ax_idx=0,
             ticklabels=np.linspace(0, 100, 5),
             minor_num=5,)
 
-F.ax.plot(MLT2, Brho3*1E+9, linewidth=2.0, color=UC.red,
-          label='FASTER')
+F.ax.plot(MLT2, Brho3, linewidth=2.0, color=UC.red,
+          label='MASTER')
 F.ax.axhline(y=Brho3_c, linewidth=2.0, color='k',
              label='Con2020')
 
@@ -746,3 +752,51 @@ legend = F.legend(ax_idx=0,
 legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
 
 plt.savefig('v2_B1_lobe_15rj.pdf', bbox_inches='tight')
+
+
+# ===========================================================
+# B1_phiのMLT分布を描いてみる
+# ===========================================================
+F = ShareXaxis()
+F.fontsize = 21
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=1, figsize=(5.0, 4.5), dpi='XL')
+F.hspace = 0.15
+F.initialize()
+
+F.draw_panel_name(F.ax, ' c ')
+
+xticks = np.arange(0, 24+1, 3)
+xticklabels = np.arange(0, 24+1, 3, dtype=int)
+
+F.set_xaxis(label=r'MLT [hour]',
+            min=0.0, max=24.0,
+            ticks=xticks,
+            ticklabels=xticklabels,
+            minor_num=3)
+F.set_yaxis(ax_idx=0,
+            label=r'$\delta B_{\varphi_{\rm cs}}$ [nT]',
+            min=-20, max=10,
+            ticks=np.linspace(-20, 10, 6),
+            ticklabels=np.linspace(-20, 10, 6),
+            minor_num=4,)
+
+F.ax.plot(MLT2, Bphi3, linewidth=2.0, color=UC.red,
+          label='MASTER')
+F.ax.axhline(y=Bphi3_c, linewidth=2.0, color='k',
+             label='Con2020')
+
+F.ax.set_title(
+    r'$\rho_{\rm cs}=15.0$ $R_{\rm J}$ | $z_{\rm cs}=2.0$ $R_{\rm J}$')
+
+legend = F.legend(ax_idx=0,
+                  ncol=1, markerscale=1.0,
+                  loc='upper right',
+                  handlelength=2.0,
+                  textcolor=False,
+                  fontsize_scale=0.65,
+                  handletextpad=0.4)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
+
+plt.savefig('v2_B1_phi_15rj.pdf', bbox_inches='tight')
