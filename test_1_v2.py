@@ -60,7 +60,7 @@ csfield.config(
 # ===========================================================
 # AZIMUTHAL CURRENT DENSITY
 # ===========================================================
-# MASTER
+# FASTER
 rho_cs = np.linspace(0.0, 100.0, 300)*RJ     # [m]
 i_phi_new = csfield.i_phi_profile(
     MLT=0.0,
@@ -407,7 +407,7 @@ F.set_yaxis(ax_idx=0,
             ticklabels=np.linspace(-50, 150, 5),
             minor_num=5,)
 
-# MASTER (赤道)
+# FASTER (赤道)
 F.ax.plot(r0_arr/RJ,
           np.sqrt(Bx1**2+By1**2+Bz1**2)*1E+9,
           color=UC.red,
@@ -458,7 +458,7 @@ F.ax.fill_between([0, 100], [-200, 0],
                   alpha=0.35, zorder=-5)
 
 F.ax.text(0.05, 0.05,
-          'Red: MASTER',
+          'Red: FASTER',
           color=UC.red,
           fontsize=F.fontsize*0.8,
           fontweight='bold',
@@ -576,7 +576,7 @@ F.set_yaxis(ax_idx=0,
             ticklabels=np.linspace(-50, 150, 5),
             minor_num=5,)
 
-# MASTER (赤道)
+# FASTER (赤道)
 F.ax.plot(rho1_arr/RJ,
           np.sqrt(Bx2**2+By2**2+Bz2**2)*1E+9,
           color=UC.red,
@@ -627,7 +627,7 @@ F.ax.fill_between([0, 100], [-200, 0],
                   alpha=0.35, zorder=-5)
 
 F.ax.text(0.05, 0.05,
-          'Red: MASTER',
+          'Red: FASTER',
           color=UC.red,
           fontsize=F.fontsize*0.8,
           fontweight='bold',
@@ -687,7 +687,7 @@ F.set_yaxis(ax_idx=0,
             minor_num=5,)
 
 F.ax.plot(MLT2, (Bz3_i+Bz3)/(Bphi3_i+Bphi3), linewidth=2.0, color=UC.red,
-          label='MASTER')
+          label='FASTER')
 F.ax.axhline(y=(Bz3_i+Bz3_c)/(Bphi3_i+Bphi3_c), linewidth=2.0, color='k',
              label='Con2020')
 
@@ -735,7 +735,7 @@ F.set_yaxis(ax_idx=0,
             minor_num=5,)
 
 F.ax.plot(MLT2, Brho3, linewidth=2.0, color=UC.red,
-          label='MASTER')
+          label='FASTER')
 F.ax.axhline(y=Brho3_c, linewidth=2.0, color='k',
              label='Con2020')
 
@@ -783,7 +783,7 @@ F.set_yaxis(ax_idx=0,
             minor_num=4,)
 
 F.ax.plot(MLT2, Bphi3, linewidth=2.0, color=UC.red,
-          label='MASTER')
+          label='FASTER')
 F.ax.axhline(y=Bphi3_c, linewidth=2.0, color='k',
              label='Con2020')
 
