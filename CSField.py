@@ -33,7 +33,7 @@ class CSField():
             self,
             I_rho0=10.033388761574646,     # 8.29512904,
             i_phi0=4.838275473116932E-5,   # 4.84800493E-5,
-            D=2.5*math.sqrt(5/3),          # 2.5 or 3.6
+            D=3.3*math.sqrt(5/3),          # 2.5 or 3.6
             theta_d_deg=9.3,
             phi_d_deg=155.8,
             c1=5.0,         # 5.0
@@ -49,7 +49,7 @@ class CSField():
             a1=0.0,
             MLT1=0.0,
             b1=4.2518,
-            b2=0.0,         # 0.0 or 0.25
+            b2=0.1,         # 0.0 or 0.25
             MLTb=-0.2086,
     ):
         """
@@ -337,7 +337,7 @@ class CSField():
             tuple: B1 vector (B_rho, B_phi, B_Z) [T]
         """
         # Scale height of the current sheet [RJ]s
-        D = self.D*(1.0+self.b2*math.cos(np.pi*(MLT-21.0)/12.0))
+        D = self.D*(1.0+self.b2*math.cos(np.pi*(MLT-18.0)/12.0))
 
         MLT_rad = 2*np.pi*(MLT)/24.0    # [rad]
 

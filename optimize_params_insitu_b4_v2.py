@@ -665,10 +665,10 @@ if __name__ == '__main__':
                76, 77, 78, 79, 80]
     parallel = 5
 
-    a0 = 0.0  # 1.87067601E-6 (b4v2) / 2.8333677E-6 (b5)
-    MLT0 = 0.0  # 2.7409048 (b4v2) / 1.56400572 (b5)
-    a1 = 0.0  # 25.56805279 (b4v2) / 14.95621835 (b5)
-    MLT1 = 0.0  # 18.83227378 (b4v2) / 19.83627108 (b5)
+    a0 = 3.46781481E-6  # 2.8333677E-6 (b5) / 3.24391885E-6 (b5_2)
+    MLT0 = 0.52113394  # 1.56400572 (b5) / 0.81690677
+    a1 = 18.34895438  # 14.95621835 (b5) / 16.99527028
+    MLT1 = 20.0143857  # 19.83627108 (b5) / 19.94426567
     b1_arr = 4.2518  # 3.64 [nT] (Provan+2024) / 4.66 (Cowley+2025)
     MLTb = -0.2086
     i_phi0_arr = np.linspace(30.0, 64.0, 102)*1E-6   # 5.2E-5
@@ -679,7 +679,7 @@ if __name__ == '__main__':
     print('i_phi0 [10^-5]:', i_phi0_arr[0]*1E+5, i_phi0_arr[-1]*1E+5)
     print('I_rho0:', I_rho0_arr[0], I_rho0_arr[-1])
 
-    savedir = 'results/insitu_fit_b5_2_v2_36rj/result_'
+    savedir = 'results/insitu_fit_a0_a1_b5_2_v2_36rj/result_'
     save_arr = np.zeros((len(PJ_list), 7))
     start = time.time()
     for i in range(len(PJ_list)):
