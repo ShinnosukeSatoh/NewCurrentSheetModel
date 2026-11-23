@@ -622,20 +622,15 @@ class CSField():
 
         return: Surface current density i_phi [A m-1]
         """
-        f1 = self.i_phi0*(rho_cs)/(((rho_cs)**2+(self.c1)**2)**(1.5))
-        f2 = self.i_phi0*(rho_cs)/(((rho_cs)**2+(self.c2)**2)**(1.5))
-        f3 = self.i_phi0*(rho_cs)/(((rho_cs)**2+(self.c3)**2)**(1.5))
+        i_phi0 = self.i_phi0 + self.a0*math.cos(np.pi*(MLT-self.MLT0)/12.0)
+        f1 = i_phi0*(rho_cs)/(((rho_cs)**2+(self.c1)**2)**(1.5))
+        f2 = i_phi0*(rho_cs)/(((rho_cs)**2+(self.c2)**2)**(1.5))
+        f3 = i_phi0*(rho_cs)/(((rho_cs)**2+(self.c3)**2)**(1.5))
         total = self.w1*f1+self.w2*f2+self.w3*f3
-        if self.w4 != 0.0:
-            f4 = self.i_phi0*(rho_cs)/(((rho_cs)**2+(self.c4)**2)**(1.5))
-            total += self.w4*f4
         if each_term:
             self.f1 = f1
             self.f2 = f2
             self.f3 = f3
-            if self.w4 != 0.0:
-                self.f4 = f4
-        total += self.a0*math.cos(2*np.pi*(MLT-self.MLT0)/24.0)
         return total
 
     def J_phi_Wang22(self, rho_cs, z, MLT):

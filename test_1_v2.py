@@ -39,15 +39,15 @@ RJ = 71492.0E+3          # JUPITER RADIUS [m]
 # ===========================================================
 csfield = CSField()
 csfield.config(
-    i_phi0=4.838275473116932E-5,
-    I_rho0=10.033388761574646,
-    a0=2.8333677E-6,
-    MLT0=1.56400572,
-    a1=14.95621835,
-    MLT1=19.83627108,
+    i_phi0=4.9213685925554586E-5,
+    I_rho0=11.103883377723957,
+    a0=3.46781481E-6,
+    MLT0=0.52113394,
+    a1=18.34895438,
+    MLT1=20.0143857,
     b1=4.2518,
     MLTb=-0.2086,
-    D=2.5*math.sqrt(5/3),
+    D=3.3*math.sqrt(5/3),
     # c1=5.0,         # 5.0
     # c2=14.0,        # 14.0
     # c3=46.0,        # 46.0
@@ -60,7 +60,7 @@ csfield.config(
 # ===========================================================
 # AZIMUTHAL CURRENT DENSITY
 # ===========================================================
-# FASTER
+# FALCON
 rho_cs = np.linspace(0.0, 100.0, 300)*RJ     # [m]
 i_phi_new = csfield.i_phi_profile(
     MLT=0.0,
@@ -76,14 +76,14 @@ print('np.min(J_phi_new):', np.min(J_phi_new))
 
 # Wang+2022
 J_phi_w22_6h = np.zeros(rho_cs.size)   # [MA RJ-2]
-J_phi_w22_12h = np.zeros(rho_cs.size)  # [MA RJ-2]
 J_phi_w22_18h = np.zeros(rho_cs.size)  # [MA RJ-2]
+I_phi_w22_0h = np.zeros(rho_cs.size)   # [MA RJ-1]
 I_phi_w22_6h = np.zeros(rho_cs.size)   # [MA RJ-1]
 I_phi_w22_18h = np.zeros(rho_cs.size)  # [MA RJ-1]
 for i in range(rho_cs.size):
     J_phi_w22_6h[i] = csfield.J_phi_Wang22(rho_cs[i]/RJ, z=0, MLT=6.0)
-    J_phi_w22_12h[i] = csfield.J_phi_Wang22(rho_cs[i]/RJ, z=0, MLT=12.0)
     J_phi_w22_18h[i] = csfield.J_phi_Wang22(rho_cs[i]/RJ, z=0, MLT=18.0)
+    I_phi_w22_0h[i] = csfield.i_phi_Wang22(rho_cs[i]/RJ, MLT=0.0)
     I_phi_w22_6h[i] = csfield.i_phi_Wang22(rho_cs[i]/RJ, MLT=6.0)
     I_phi_w22_18h[i] = csfield.i_phi_Wang22(rho_cs[i]/RJ, MLT=18.0)
 
@@ -100,47 +100,45 @@ F = ShareXaxis()
 F.fontsize = 21
 F.fontname = 'Liberation Sans Narrow'
 
-F.set_figparams(nrows=1, figsize=(5.5, 4.7), dpi='XL')
+F.set_figparams(nrows=1, figsize=(5.5, 4), dpi='XL')
 F.hspace = 0.15
 F.initialize()
 
-xticks = np.arange(0, 65+1, 5)
-xticklabels = np.arange(0, 65+1, 5, dtype=int)
+xticks = np.arange(0, 60+1, 10)
+xticklabels = np.arange(0, 60+1, 10, dtype=int)
 
-F.set_xaxis(label=r'$\rho$ [$R_{\rm J}$]',
+F.set_xaxis(label=r'$\rho_{\rm cs}$ [$R_{\rm J}$]',
             min=0.0, max=35.0,
             ticks=xticks,
             ticklabels=xticklabels,
             minor_num=5)
 F.set_yaxis(ax_idx=0,
-            label=r'$i_{\varphi}(R)$ [MA $R_{\rm J}^{-1}$]',
-            min=-0.2, max=18.0,
-            ticks=np.linspace(0, 18, 10),
-            ticklabels=np.linspace(0, 18, 10, dtype=int),
-            minor_num=2,)
+            label=r'[MA $R_{\rm J}^{-1}$]',
+            min=-0.2, max=15.0,
+            ticks=np.arange(0, 15+1, 5),
+            ticklabels=np.arange(0, 15+1, 5, dtype=int),
+            minor_num=5,)
 
 F.ax.plot(rho_cs/RJ, i_phi_new*(1E-6)*RJ,
           color=UC.red, linewidth=3.0,
-          label='New model')
+          label='FALCON')
 F.ax.plot(rho_cs_con20/RJ, i_phi_con20*(1E-6)*RJ,
-          color='k',
+          color='k',  linewidth=2.4,
+          linestyle=(0, (3, 3)),
           label='Con2020')
-F.ax.plot(rho_cs/RJ, I_phi_w22_6h,
-          color=UC.blue,
-          label='Wang+2022')
-F.ax.plot(rho_cs/RJ, I_phi_w22_18h,
-          color=UC.blue)
-F.ax.fill_between(x=rho_cs/RJ,
-                  y1=I_phi_w22_6h,
-                  y2=I_phi_w22_18h,
-                  ec=None,
-                  fc=UC.lighterblue,
-                  alpha=0.4, zorder=0.9,)
+F.ax.scatter(rho_cs_con20[0]/RJ, i_phi_con20[0]*(1E-6)*RJ,
+             marker='o', fc='w', ec='k', s=15, linewidth=1.5, zorder=2.0,)
+F.ax.scatter(rho_cs_con20[-1]/RJ, i_phi_con20[-1]*(1E-6)*RJ,
+             marker='o', fc='w', ec='k', s=15, linewidth=1.5, zorder=2.0,)
+F.ax.plot(rho_cs/RJ, I_phi_w22_0h,
+          color=UC.blue, linewidth=2.4,
+          linestyle='dotted',
+          label='Wang et al. (2022)')
 
-F.ax.set_title(r'Current density', weight='bold')
+F.ax.set_title(r'Height-integrated current density', weight='bold')
 
 legend = F.legend(ax_idx=0,
-                  ncol=1, markerscale=1.0,
+                  ncol=1, markerscale=1.5,
                   loc='upper right',
                   handlelength=1.6,
                   textcolor=False,
@@ -373,6 +371,7 @@ for i in range(MLT2.size):
                                                        MLT2[i])
 Brho3 = (Bx3*np.cos(phi2) + By3*np.sin(phi2))*1E+9    # [nT]
 Bphi3 = (-Bx3*np.sin(phi2) + By3*np.cos(phi2))*1E+9   # [nT]
+Bz3 *= 1E+9
 
 Bx3_c, By3_c, Bz3_c = jm.Con2020.Field(x2/RJ, y2/RJ, z2/RJ)  # [nT]
 Brho3_c = Bx3_c*np.cos(phi2) + By3_c*np.sin(phi2)
@@ -407,7 +406,7 @@ F.set_yaxis(ax_idx=0,
             ticklabels=np.linspace(-50, 150, 5),
             minor_num=5,)
 
-# FASTER (赤道)
+# FALCON (赤道)
 F.ax.plot(r0_arr/RJ,
           np.sqrt(Bx1**2+By1**2+Bz1**2)*1E+9,
           color=UC.red,
@@ -458,7 +457,7 @@ F.ax.fill_between([0, 100], [-200, 0],
                   alpha=0.35, zorder=-5)
 
 F.ax.text(0.05, 0.05,
-          'Red: FASTER',
+          'Red: FALCON',
           color=UC.red,
           fontsize=F.fontsize*0.8,
           fontweight='bold',
@@ -576,7 +575,7 @@ F.set_yaxis(ax_idx=0,
             ticklabels=np.linspace(-50, 150, 5),
             minor_num=5,)
 
-# FASTER (赤道)
+# FALCON (赤道)
 F.ax.plot(rho1_arr/RJ,
           np.sqrt(Bx2**2+By2**2+Bz2**2)*1E+9,
           color=UC.red,
@@ -627,7 +626,7 @@ F.ax.fill_between([0, 100], [-200, 0],
                   alpha=0.35, zorder=-5)
 
 F.ax.text(0.05, 0.05,
-          'Red: FASTER',
+          'Red: FALCON',
           color=UC.red,
           fontsize=F.fontsize*0.8,
           fontweight='bold',
@@ -687,7 +686,7 @@ F.set_yaxis(ax_idx=0,
             minor_num=5,)
 
 F.ax.plot(MLT2, (Bz3_i+Bz3)/(Bphi3_i+Bphi3), linewidth=2.0, color=UC.red,
-          label='FASTER')
+          label='FALCON')
 F.ax.axhline(y=(Bz3_i+Bz3_c)/(Bphi3_i+Bphi3_c), linewidth=2.0, color='k',
              label='Con2020')
 
@@ -728,24 +727,61 @@ F.set_xaxis(label=r'MLT [hour]',
             ticklabels=xticklabels,
             minor_num=3)
 F.set_yaxis(ax_idx=0,
-            label=r'$\delta B_{\rho_{\rm cs}}$ [nT]',
-            min=-10, max=100,
-            ticks=np.linspace(0, 100, 5),
-            ticklabels=np.linspace(0, 100, 5),
+            label=r'[nT]',
+            min=-25, max=75,
+            ticks=np.arange(-25, 75+1, 25),
+            ticklabels=np.arange(-25, 75+1, 25),
             minor_num=5,)
 
+# FALCON
 F.ax.plot(MLT2, Brho3, linewidth=2.0, color=UC.red,
-          label='FASTER')
+          linestyle=(4, (4, 4)),)
+F.ax.plot(MLT2, Bphi3, linewidth=2.0, color=UC.red,
+          linestyle=(2, (2, 2)),)
+F.ax.plot(MLT2, Bz3, linewidth=2.0, color=UC.red,
+          linestyle='-.',)
+print('Bz3 max MLT:', MLT2[np.argmax(Bz3)])
+
+# Con2020
 F.ax.axhline(y=Brho3_c, linewidth=2.0, color='k',
-             label='Con2020')
+             linestyle=(4, (4, 4)),
+             label=r'$\delta B_{\rho_{\rm cs}}$')
+F.ax.axhline(y=Bphi3_c, linewidth=2.0, color='k',
+             linestyle=(2, (2, 2)),
+             label=r'$\delta B_{\varphi_{\rm cs}}$')
+F.ax.axhline(y=Bz3_c, linewidth=2.0, color='k',
+             linestyle='-.',
+             label=r'$\delta B_{z_{\rm cs}}$')
+
+F.ax.fill_between([0, 100], [-200, 0],
+                  color=UC.lightgray,
+                  alpha=0.35, zorder=-5)
+
+F.ax.text(0.05, 0.05,
+          'Red: FALCON',
+          color=UC.red,
+          fontsize=F.fontsize*0.8,
+          fontweight='bold',
+          verticalalignment='center',
+          horizontalalignment='left',
+          transform=F.ax.transAxes)
+
+F.ax.text(0.95, 0.05,
+          'Black: Con2020',
+          color='k',
+          fontsize=F.fontsize*0.8,
+          fontweight='bold',
+          verticalalignment='center',
+          horizontalalignment='right',
+          transform=F.ax.transAxes)
 
 F.ax.set_title(
     r'$\rho_{\rm cs}=15.0$ $R_{\rm J}$ | $z_{\rm cs}=2.0$ $R_{\rm J}$')
 
 legend = F.legend(ax_idx=0,
-                  ncol=1, markerscale=1.0,
-                  loc='upper right',
-                  handlelength=2.0,
+                  ncol=3, markerscale=1.0,
+                  bbox_to_anchor=(1.05, 1.0),
+                  handlelength=2.6,
                   textcolor=False,
                   fontsize_scale=0.65,
                   handletextpad=0.4)
@@ -777,13 +813,13 @@ F.set_xaxis(label=r'MLT [hour]',
             minor_num=3)
 F.set_yaxis(ax_idx=0,
             label=r'$\delta B_{\varphi_{\rm cs}}$ [nT]',
-            min=-20, max=10,
-            ticks=np.linspace(-20, 10, 6),
-            ticklabels=np.linspace(-20, 10, 6),
-            minor_num=4,)
+            min=-20, max=5,
+            ticks=np.arange(-20, 5+1, 5),
+            ticklabels=np.arange(-20, 5+1, 5),
+            minor_num=5,)
 
 F.ax.plot(MLT2, Bphi3, linewidth=2.0, color=UC.red,
-          label='FASTER')
+          label='FALCON')
 F.ax.axhline(y=Bphi3_c, linewidth=2.0, color='k',
              label='Con2020')
 
