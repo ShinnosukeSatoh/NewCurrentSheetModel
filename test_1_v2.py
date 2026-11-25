@@ -127,9 +127,9 @@ F.ax.plot(rho_cs_con20/RJ, i_phi_con20*(1E-6)*RJ,
           linestyle=(0, (3, 3)),
           label='Con2020')
 F.ax.scatter(rho_cs_con20[0]/RJ, i_phi_con20[0]*(1E-6)*RJ,
-             marker='o', fc='w', ec='k', s=15, linewidth=1.5, zorder=2.0,)
+             marker='o', fc='w', ec='k', s=17, linewidth=1.5, zorder=2.0,)
 F.ax.scatter(rho_cs_con20[-1]/RJ, i_phi_con20[-1]*(1E-6)*RJ,
-             marker='o', fc='w', ec='k', s=15, linewidth=1.5, zorder=2.0,)
+             marker='o', fc='w', ec='k', s=17, linewidth=1.5, zorder=2.0,)
 F.ax.plot(rho_cs/RJ, I_phi_w22_0h,
           color=UC.blue, linewidth=2.4,
           linestyle='dotted',
@@ -147,6 +147,59 @@ legend = F.legend(ax_idx=0,
 legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
 
 plt.savefig('v2_i_phi.png', bbox_inches='tight')
+
+
+# ===========================================================
+# 面電流密度(方位角電流)の動径分布を描いてみる
+# ===========================================================
+F = ShareXaxis()
+F.fontsize = 21
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=1, figsize=(5.5, 4), dpi='XL')
+F.hspace = 0.15
+F.initialize()
+
+xticks = np.arange(0, 60+1, 10)
+xticklabels = np.arange(0, 60+1, 10, dtype=int)
+
+F.set_xaxis(label=r'$\rho$ [$R_{\rm J}$]',
+            min=0.0, max=35.0,
+            ticks=xticks,
+            ticklabels=xticklabels,
+            minor_num=5)
+F.set_yaxis(ax_idx=0,
+            label=r'[MA $R_{\rm J}^{-1}$]',
+            min=-0.2, max=15.0,
+            ticks=np.arange(0, 15+1, 5),
+            ticklabels=np.arange(0, 15+1, 5, dtype=int),
+            minor_num=5,)
+
+F.ax.plot(rho_cs_con20/RJ, i_phi_con20*(1E-6)*RJ,
+          color='k',  linewidth=2.4,
+          # linestyle=(0, (3, 3)),
+          label='Con2020')
+F.ax.scatter(rho_cs_con20[0]/RJ, i_phi_con20[0]*(1E-6)*RJ,
+             marker='o', fc='w', ec='k', s=17, linewidth=1.5, zorder=2.0,)
+F.ax.scatter(rho_cs_con20[-1]/RJ, i_phi_con20[-1]*(1E-6)*RJ,
+             marker='o', fc='w', ec='k', s=17, linewidth=1.5, zorder=2.0,)
+F.ax.plot(rho_cs/RJ, I_phi_w22_0h,
+          color=UC.blue, linewidth=2.4,
+          linestyle='dotted',
+          label='Wang et al. (2022)')
+
+F.ax.set_title(r'Height-integrated current density', weight='bold')
+
+legend = F.legend(ax_idx=0,
+                  ncol=1, markerscale=1.5,
+                  loc='upper right',
+                  handlelength=1.6,
+                  textcolor=False,
+                  fontsize_scale=0.65,
+                  handletextpad=0.4)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
+
+plt.savefig('v2_i_phi_2.png', bbox_inches='tight')
 
 
 # ===========================================================
